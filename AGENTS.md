@@ -45,3 +45,5 @@ The project is closer to a mock server than a production backend.
 - Prefer simpler solutions when possible.
 - Avoid introducing unnecessary abstractions.
 - Keep execution flow easy to trace.
+- Do not create or modify AGENTS.md files unless explicitly requested.
+- Do not generate architecture documentation automatically.
