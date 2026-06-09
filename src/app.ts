@@ -1,8 +1,8 @@
 import express from "express";
-import { createSystemRouter } from "./routes/system.js";
-import { createCollectionsRouter } from "./routes/database.js";
-import { SystemService } from "./services/system.js";
-import { InMemoryDatabase } from "./db/inMemoryDatabase.js";
+import { createSystemRouter } from "./system/route.js";
+import { createCollectionsRouter } from "./db/route.js";
+import { SystemService } from "./system/system.js";
+import { InMemoryDatabase } from "./db/implementations/inMemoryDatabase.js";
 
 const app = express();
 

@@ -1,6 +1,6 @@
-import type { Database } from "../services/db/database.js";
-import type { RecordData, StoredRecord } from "../services/db/types.js";
-import { RecordNotFoundError } from "../services/db/errors.js";
+import type { Database } from "../database.js";
+import type { RecordData, StoredRecord } from "../types.js";
+import { RecordNotFoundError } from "../errors.js";
 
 type CollectionStore = {
   nextId: number;

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { SystemService } from "../services/system.js";
+import type { SystemService } from "./system.js";
 
 export function createSystemRouter(systemService: SystemService): Router {
   const router = Router();

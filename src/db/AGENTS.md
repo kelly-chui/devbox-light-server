@@ -1,37 +1,45 @@
-# Database Implementation Guidelines
+# Database Module
 
-- src/db contains concrete database implementations.
-- Database implementations should remain replaceable through the Database interface.
-- Keep implementations explicit and easy to trace.
-- Prefer simple storage logic over framework-style abstractions.
-- Avoid ORM-like behavior unless explicitly required.
+This module provides database-like record storage for the development server.
 
-# Storage Behavior
+# Responsibilities
 
-- Keep persistence behavior predictable and explicit.
-- Avoid hidden mutations or implicit behavior.
-- Prefer straightforward CRUD flows over abstraction-heavy query systems.
+- Store and retrieve records.
+- Define database-related contracts, types, and errors.
+- Provide database implementations.
+- Provide database HTTP endpoints.
 
-# Architecture
+# Non Responsibilities
 
-- Database implementations must not depend on Express.
-- Keep implementation-specific logic inside src/db.
-- Avoid leaking storage-specific behavior into service-level contracts.
-- Prefer composition over inheritance.
+This module must not handle:
 
-# Async
+- Authentication
+- Authorization
+- File storage
+- Business-specific application rules
+- ORM-style domain modeling
 
-- Use async-await style APIs for asynchronous flows.
-- Keep async flows easy to trace.
+# Design
 
-# Testing
+Database implementations should remain simple and predictable.
 
-- Database implementations should be easy to test in isolation.
-- Prefer lightweight tests with explicit setup and teardown.
-- Avoid unnecessary mocking.
+Avoid:
 
-# AI Guidance
+- ORM-style repositories
+- Generic persistence frameworks
+- Complex transaction systems
 
-- Do not introduce ORM-style repositories or query builders unless explicitly requested.
-- Avoid excessive generic abstractions.
-- Prefer readable implementation code over reusable framework patterns.
+unless explicitly requested.
+
+# Record Model
+
+Records are grouped by collection.
+
+A stored record contains:
+
+- id
+- data
+
+The database implementation owns id generation.
+
+The data field should remain generic and JSON-like.

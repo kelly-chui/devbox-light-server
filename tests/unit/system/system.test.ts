@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SystemService } from "../src/services/system.js";
+import { SystemService } from "../../../src/system/system.js";
 
 describe("SystemService", () => {
   beforeEach(() => {

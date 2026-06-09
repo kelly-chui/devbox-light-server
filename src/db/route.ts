@@ -1,7 +1,7 @@
 import { Router, type Response } from "express";
-import type { RecordData } from "../services/db/types.js";
-import type { Database } from "../services/db/database.js";
-import { RecordNotFoundError } from "../services/db/errors.js";
+import type { RecordData } from "./types.js";
+import type { Database } from "./database.js";
+import { RecordNotFoundError } from "./errors.js";
 
 function isRecordData(value: unknown): value is RecordData {
   return typeof value === "object" && value !== null && !Array.isArray(value);
