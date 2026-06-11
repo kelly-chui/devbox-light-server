@@ -1,13 +1,13 @@
 # Database Module
 
-This module provides database-like record storage for the development server.
+This module provides record storage capabilities for the development server.
 
 # Responsibilities
 
-- Store and retrieve records.
-- Define database-related contracts, types, and errors.
-- Provide database implementations.
-- Provide database HTTP endpoints.
+- Define record storage contracts.
+- Define database-related types and errors.
+- Provide record storage implementations.
+- Provide database-related use cases when needed.
 
 # Non Responsibilities
 
@@ -19,18 +19,6 @@ This module must not handle:
 - Business-specific application rules
 - ORM-style domain modeling
 
-# Design
-
-Database implementations should remain simple and predictable.
-
-Avoid:
-
-- ORM-style repositories
-- Generic persistence frameworks
-- Complex transaction systems
-
-unless explicitly requested.
-
 # Record Model
 
 Records are grouped by collection.
@@ -40,6 +28,18 @@ A stored record contains:
 - id
 - data
 
-The database implementation owns id generation.
+The storage implementation owns id generation.
 
 The data field should remain generic and JSON-like.
+
+# Design
+
+Record storage capabilities should remain simple and predictable.
+
+Avoid:
+
+- ORM-style domain models
+- Generic persistence frameworks
+- Complex transaction systems
+
+unless explicitly requested.

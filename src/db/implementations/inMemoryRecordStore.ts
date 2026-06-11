@@ -1,4 +1,4 @@
-import type { Database } from "../database.js";
+import type { RecordStore } from "../recordStore.js";
 import type { RecordData, StoredRecord } from "../types.js";
 import { RecordNotFoundError } from "../errors.js";
 
@@ -7,7 +7,7 @@ type CollectionStore = {
   records: Map<string, RecordData>;
 };
 
-export class InMemoryDatabase implements Database {
+export class InMemoryRecordStore implements RecordStore {
   private readonly collections = new Map<string, CollectionStore>();
 
   private getOrCreateCollection(collection: string): CollectionStore {

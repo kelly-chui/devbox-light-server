@@ -1,35 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { InMemoryDatabase } from "../../../src/db/implementations/inMemoryDatabase.js";
+import { InMemoryRecordStore } from "../../../src/db/implementations/inMemoryRecordStore.js";
 import { RecordNotFoundError } from "../../../src/db/errors.js";
 
 async function createUser(
-  db: InMemoryDatabase,
+  store: InMemoryRecordStore,
   name = "Ada",
 ) {
-  return db.create("users", { name });
+  return store.create("users", { name });
 }
 
-describe("InMemoryDatabase", () => {
+describe("InMemoryRecordStore", () => {
   it("creates and gets records", async () => {
-    const db = new InMemoryDatabase();
+    const store = new InMemoryRecordStore();
 
-    const created = await createUser(db);
+    const created = await createUser(store);
 
     expect(created.id).toBeDefined();
     expect(created.data).toEqual({ name: "Ada" });
 
-    const fetched = await db.get("users", created.id);
+    const fetched = await store.get("users", created.id);
 
     expect(fetched).toEqual(created);
   });
 
   it("lists records in insertion order per collection", async () => {
-    const db = new InMemoryDatabase();
+    const store = new InMemoryRecordStore();
 
-    await createUser(db, "Ada");
-    await createUser(db, "Linus");
+    await createUser(store, "Ada");
+    await createUser(store, "Linus");
 
-    const records = await db.list("users");
+    const records = await store.list("users");
 
     expect(records).toHaveLength(2);
     expect(records[0]?.data).toEqual({ name: "Ada" });
@@ -37,15 +37,15 @@ describe("InMemoryDatabase", () => {
   });
 
   it("replaces existing records", async () => {
-    const db = new InMemoryDatabase();
+    const store = new InMemoryRecordStore();
 
-    const created = await createUser(db);
+    const created = await createUser(store);
 
-    await db.replace("users", created.id, {
+    await store.replace("users", created.id, {
       name: "Grace",
     });
 
-    expect(await db.get("users", created.id)).toEqual({
+    expect(await store.get("users", created.id)).toEqual({
       id: created.id,
       data: {
         name: "Grace",
@@ -54,33 +54,33 @@ describe("InMemoryDatabase", () => {
   });
 
   it("throws when replacing a missing record", async () => {
-    const db = new InMemoryDatabase();
+    const store = new InMemoryRecordStore();
 
     await expect(
-      db.replace("users", "999", {
+      store.replace("users", "999", {
         nope: true,
       }),
     ).rejects.toBeInstanceOf(RecordNotFoundError);
   });
 
   it("deletes records", async () => {
-    const db = new InMemoryDatabase();
+    const store = new InMemoryRecordStore();
 
-    const created = await createUser(db);
+    const created = await createUser(store);
 
-    expect(await db.delete("users", created.id)).toBe(true);
-    expect(await db.get("users", created.id)).toBeUndefined();
+    expect(await store.delete("users", created.id)).toBe(true);
+    expect(await store.get("users", created.id)).toBeUndefined();
   });
 
   it("returns false when deleting a missing record", async () => {
-    const db = new InMemoryDatabase();
+    const store = new InMemoryRecordStore();
 
-    expect(await db.delete("users", "999")).toBe(false);
-    expect(await db.delete("missing", "1")).toBe(false);
+    expect(await store.delete("users", "999")).toBe(false);
+    expect(await store.delete("missing", "1")).toBe(false);
   });
 
   it("does not leak stored data references", async () => {
-    const db = new InMemoryDatabase();
+    const store = new InMemoryRecordStore();
 
     const payload = {
       profile: {
@@ -88,14 +88,14 @@ describe("InMemoryDatabase", () => {
       },
     };
 
-    const created = await db.create("users", payload);
+    const created = await store.create("users", payload);
 
     payload.profile.name = "MUTATED";
     created.data.profile = {
       name: "MUTATED2",
     };
 
-    expect(await db.get("users", created.id)).toEqual({
+    expect(await store.get("users", created.id)).toEqual({
       id: created.id,
       data: {
         profile: {
@@ -106,17 +106,17 @@ describe("InMemoryDatabase", () => {
   });
 
   it("isolates collections", async () => {
-    const db = new InMemoryDatabase();
+    const store = new InMemoryRecordStore();
 
-    await db.create("users", {
+    await store.create("users", {
       name: "Ada",
     });
 
-    await db.create("posts", {
+    await store.create("posts", {
       title: "Hello",
     });
 
-    expect(await db.list("users")).toEqual([
+    expect(await store.list("users")).toEqual([
       {
         id: expect.any(String),
         data: {
@@ -125,7 +125,7 @@ describe("InMemoryDatabase", () => {
       },
     ]);
 
-    expect(await db.list("posts")).toEqual([
+    expect(await store.list("posts")).toEqual([
       {
         id: expect.any(String),
         data: {

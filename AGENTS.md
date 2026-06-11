@@ -30,11 +30,16 @@ The project is closer to a mock server than a production backend.
 
 - Route files are responsible for HTTP request and response mapping only.
 - Route files should remain thin.
+- Services should contain use-case and application workflow logic when needed.
 - Application logic must not depend on Express.
-- Dependency wiring should happen in `src/app.ts`.
+- Contracts define replaceable capabilities.
 - Application code should depend on contracts rather than concrete implementations.
-- Implementations should remain replaceable through clear interfaces.
+- Implementations should remain replaceable through clear contracts.
+- Prefer introducing a service when multiple capabilities must be coordinated.
+- Dependency wiring should happen in `src/app.ts`.
 - Persistence should remain optional and swappable.
+- Contracts represent capabilities.
+- Services represent use cases.
 
 # Module Boundaries
 

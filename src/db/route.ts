@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
 import type { RecordData } from "./types.js";
-import type { Database } from "./database.js";
+import type { RecordStore } from "./recordStore.js";
 import { RecordNotFoundError } from "./errors.js";
 
 function isRecordData(value: unknown): value is RecordData {
@@ -40,7 +40,7 @@ function sendDatabaseError(res: Response, error: unknown): void {
   throw error;
 }
 
-export function createCollectionsRouter(database: Database): Router {
+export function createCollectionsRouter(recordStore: RecordStore): Router {
   const router = Router();
 
   router.get("/:collection", async (req, res) => {
@@ -50,7 +50,7 @@ export function createCollectionsRouter(database: Database): Router {
       return;
     }
     try {
-      const records = await database.list(collection);
+      const records = await recordStore.list(collection);
       res.json({ collection, records });
     } catch (error) {
       sendDatabaseError(res, error);
@@ -64,7 +64,7 @@ export function createCollectionsRouter(database: Database): Router {
       return;
     }
     try {
-      const record = await database.get(params.collection, params.id);
+      const record = await recordStore.get(params.collection, params.id);
       if (record === undefined) {
         res.status(404).json({
           error: "not_found",
@@ -90,7 +90,7 @@ export function createCollectionsRouter(database: Database): Router {
       return;
     }
     try {
-      const record = await database.create(collection, req.body);
+      const record = await recordStore.create(collection, req.body);
       res.status(201).json(record);
     } catch (error) {
       sendDatabaseError(res, error);
@@ -108,8 +108,8 @@ export function createCollectionsRouter(database: Database): Router {
       return;
     }
     try {
-      await database.replace(params.collection, params.id, req.body);
-      const record = await database.get(
+      await recordStore.replace(params.collection, params.id, req.body);
+      const record = await recordStore.get(
         params.collection,
         params.id,
       );
@@ -126,7 +126,7 @@ export function createCollectionsRouter(database: Database): Router {
       return;
     }
     try {
-      const deleted = await database.delete(params.collection, params.id);
+      const deleted = await recordStore.delete(params.collection, params.id);
       if (!deleted) {
         res.status(404).json({
           error: "not_found",
