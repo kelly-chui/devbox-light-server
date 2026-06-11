@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
+import type { DatabaseService } from "./databaseService.js";
 import type { RecordData } from "./types.js";
-import type { RecordStore } from "./recordStore.js";
 import { RecordNotFoundError } from "./errors.js";
 
 function isRecordData(value: unknown): value is RecordData {
@@ -40,7 +40,7 @@ function sendDatabaseError(res: Response, error: unknown): void {
   throw error;
 }
 
-export function createCollectionsRouter(recordStore: RecordStore): Router {
+export function createCollectionsRouter(databaseService: DatabaseService): Router {
   const router = Router();
 
   router.get("/:collection", async (req, res) => {
@@ -50,7 +50,7 @@ export function createCollectionsRouter(recordStore: RecordStore): Router {
       return;
     }
     try {
-      const records = await recordStore.list(collection);
+      const records = await databaseService.listRecords(collection);
       res.json({ collection, records });
     } catch (error) {
       sendDatabaseError(res, error);
@@ -64,15 +64,10 @@ export function createCollectionsRouter(recordStore: RecordStore): Router {
       return;
     }
     try {
-      const record = await recordStore.get(params.collection, params.id);
-      if (record === undefined) {
-        res.status(404).json({
-          error: "not_found",
-          collection: params.collection,
-          id: params.id,
-        });
-        return;
-      }
+      const record = await databaseService.getRecord(
+        params.collection,
+        params.id,
+      );
       res.json(record);
     } catch (error) {
       sendDatabaseError(res, error);
@@ -90,7 +85,7 @@ export function createCollectionsRouter(recordStore: RecordStore): Router {
       return;
     }
     try {
-      const record = await recordStore.create(collection, req.body);
+      const record = await databaseService.createRecord(collection, req.body);
       res.status(201).json(record);
     } catch (error) {
       sendDatabaseError(res, error);
@@ -108,10 +103,10 @@ export function createCollectionsRouter(recordStore: RecordStore): Router {
       return;
     }
     try {
-      await recordStore.replace(params.collection, params.id, req.body);
-      const record = await recordStore.get(
+      const record = await databaseService.replaceRecord(
         params.collection,
         params.id,
+        req.body,
       );
       res.json(record);
     } catch (error) {
@@ -126,15 +121,7 @@ export function createCollectionsRouter(recordStore: RecordStore): Router {
       return;
     }
     try {
-      const deleted = await recordStore.delete(params.collection, params.id);
-      if (!deleted) {
-        res.status(404).json({
-          error: "not_found",
-          collection: params.collection,
-          id: params.id,
-        });
-        return;
-      }
+      await databaseService.deleteRecord(params.collection, params.id);
       res.status(204).send();
     } catch (error) {
       sendDatabaseError(res, error);
