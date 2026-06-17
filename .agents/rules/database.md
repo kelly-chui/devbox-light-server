@@ -1,15 +1,18 @@
+---
+trigger: glob
+globs: src/db/**
+---
+
 # Database Module
 
-This module provides record storage capabilities for the development server.
-
-# Responsibilities
+## Responsibilities
 
 - Define record storage contracts.
 - Define database-related types and errors.
 - Provide record storage implementations.
 - Provide database-related use cases when needed.
 
-# Non Responsibilities
+## Non-Responsibilities
 
 This module must not handle:
 
@@ -19,7 +22,7 @@ This module must not handle:
 - Business-specific application rules
 - ORM-style domain modeling
 
-# Record Model
+## Record Model
 
 Records are grouped by collection.
 
@@ -32,7 +35,7 @@ The storage implementation owns id generation.
 
 The data field should remain generic and JSON-like.
 
-# Design
+## Design
 
 Record storage capabilities should remain simple and predictable.
 
