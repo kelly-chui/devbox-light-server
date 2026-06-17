@@ -2,14 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { FileStorage } from "../fileStorage.js";
 import type { FileContent } from "../types.js";
-
-export class PathTraversalError extends Error {
-  readonly name = "PathTraversalError";
-
-  constructor(readonly key: string) {
-    super(`Path traversal detected: ${key}`);
-  }
-}
+import { PathTraversalError } from "../errors.js";
 
 export class LocalFileStorage implements FileStorage {
   private readonly rootDirectory: string;
