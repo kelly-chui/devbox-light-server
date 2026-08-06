@@ -4,23 +4,27 @@ trigger: always_on
 
 # Architecture
 
-## Module Structure
+## Dependency direction
 
-- Organize code by module.
-- Each module owns the files required for its responsibility.
-- Modules should expose a clear public API through index.ts when appropriate.
-- Avoid introducing new top-level architectural layers unless explicitly requested.
+Application code should depend on interfaces rather than concrete implementations.
 
-## Dependency Management
+```
+Route
+↓
+Service
+↓
+Interface
+↓
+Implementation
+```
+- Keep Express concerns inside routes.
+- Business logic belongs in services.
+- Storage and database implementations should be replaceable.
+- Avoid global mutable state.
+- Prefer dependency injection from `src/app.ts`.
 
-- Application code should depend on contracts rather than concrete implementations.
-- Implementations should remain replaceable through clear contracts.
-- Persistence should remain optional and swappable.
-- Prefer introducing a service when multiple capabilities must be coordinated.
+## Design principles
 
-## Module Boundaries
-
-- Each module should have a clear responsibility.
-- Avoid mixing responsibilities between modules.
-- Prefer using another module through its public interface.
-- Avoid importing another module's implementation files directly.
+- Small, focused modules.
+- Explicit behavior over magic.
+- Composition over inheritance.

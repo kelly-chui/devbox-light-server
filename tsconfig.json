@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist",
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -14,5 +12,5 @@
     "exactOptionalPropertyTypes": true,
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src", "tests"]
 }

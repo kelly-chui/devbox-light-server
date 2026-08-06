@@ -1,39 +1,23 @@
 ---
-description: Use when implementing a new feature or making a significant change to an existing module. Creates an implementation plan, waits for approval, implements the change, runs tests, and summarizes tradeoffs.
+description: Implement a non-trivial feature or significant module change.
 ---
 
 # Implement Feature
 
-Use this workflow when implementing a non-trivial feature or module change.
-
-## Steps
-
-1. Read the active Rules relevant to the task.
-
-2. Inspect the existing code before proposing changes.
-
-3. Identify the smallest reasonable scope for the task.
-
-4. Create an implementation plan before editing code.
-
-   The plan must include:
+1. Read the relevant Rules.
+2. Inspect the existing implementation.
+3. Define the smallest reasonable scope.
+4. Create an implementation plan that includes:
    - files to create
    - files to modify
    - behavior changes
    - tests to add or update
    - tradeoffs or assumptions
-
 5. Wait for user approval before making significant changes.
-
 6. Implement the approved plan.
-
-7. Run relevant tests when possible.
-
-8. Summarize the result.
-
-   Include:
+7. Run relevant tests when practical.
+8. Summarize:
    - what changed
-   - why the design was chosen
-   - missing-file or error handling if relevant
+   - error handling or limitations
    - tests run
-   - tests not run, if any
+   - tests not run

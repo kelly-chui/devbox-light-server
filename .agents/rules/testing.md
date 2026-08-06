@@ -4,13 +4,22 @@ trigger: always_on
 
 # Testing
 
-- Keep tests lightweight and focused.
-- Prefer explicit test setup over complex fixtures.
-- Avoid unnecessary mocking.
-- Unit tests should verify behavior rather than implementation details.
+## Principles
 
-When behavior changes:
+- Prefer unit tests.
+- Keep tests deterministic and environment-independent.
 
-- Add or update tests.
-- Run relevant tests when possible.
-- Explain any tests that could not be executed.
+## Scope
+
+Prefer testing:
+
+- services
+- implementations
+
+Avoid router tests unless the behavior being tested is specific to Express routing or middleware.
+
+Avoid tests that depend on:
+
+- localhost
+- real sockets
+- external services
