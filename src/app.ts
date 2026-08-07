@@ -1,13 +1,14 @@
 import express from "express";
+import path from "node:path";
 import { createSystemRouter } from "./system/route.js";
 import { createCollectionsRouter } from "./db/route.js";
 import { SystemService } from "./system/system.js";
 import { DatabaseService } from "./db/databaseService.js";
-import { InMemoryRecordStore } from "./db/implementations/inMemoryRecordStore.js";
-import { InMemoryFileStorage } from "./storage/implementations/inMemoryFileStorage.js";
+import { JsonFileRecordStore } from "./db/implementations/jsonFileRecordStore.js";
 import { StorageService } from "./storage/storageService.js";
 import { createStorageRouter } from "./storage/route.js";
-import { InMemoryTokenStore } from "./auth/implementations/inMemoryTokenStore.js";
+import { LocalFileStorage } from "./storage/implementations/localFileStorage.js";
+import { JsonFileTokenStore } from "./auth/implementations/jsonFileTokenStore.js";
 import { AuthService } from "./auth/authService.js";
 import { createAuthRouter } from "./auth/route.js";
 
@@ -18,15 +19,17 @@ app.use(express.json());
 const systemService = new SystemService();
 app.use("/system", createSystemRouter(systemService));
 
-const recordStore = new InMemoryRecordStore();
+const dataDirectory = process.env.DB_DATA_DIR ?? ".data";
+
+const recordStore = new JsonFileRecordStore(dataDirectory);
 const databaseService = new DatabaseService(recordStore);
 app.use("/collections", createCollectionsRouter(databaseService));
 
-const tokenStore = new InMemoryTokenStore();
+const tokenStore = new JsonFileTokenStore(dataDirectory);
 const authService = new AuthService(databaseService, tokenStore);
 app.use("/auth", createAuthRouter(authService));
 
-const fileStorage = new InMemoryFileStorage();
+const fileStorage = new LocalFileStorage(path.join(dataDirectory, "files"));
 const storageService = new StorageService(fileStorage);
 app.use("/files", createStorageRouter(storageService));
 

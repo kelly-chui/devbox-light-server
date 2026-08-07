@@ -13,3 +13,4 @@ Guidelines:
 - Keep implementations interchangeable.
 - Store raw file content only.
 - Metadata belongs outside the storage implementation unless explicitly required.
+- Local filesystem implementations must prevent path traversal and create parent directories when writing.

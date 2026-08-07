@@ -14,3 +14,4 @@ Guidelines:
 - Generate record IDs inside the store.
 - Keep implementations interchangeable.
 - Preserve deterministic behavior for testing.
+- Persistent implementations must preserve the id sequence across restarts and write files atomically.

@@ -1,7 +1,10 @@
 import { Router, type Response } from "express";
 import type { DatabaseService } from "./databaseService.js";
 import type { RecordData } from "./types.js";
-import { RecordNotFoundError } from "./errors.js";
+import {
+  InvalidCollectionNameError,
+  RecordNotFoundError,
+} from "./errors.js";
 
 function isRecordData(value: unknown): value is RecordData {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -29,6 +32,13 @@ function readRecordParams(
 }
 
 function sendDatabaseError(res: Response, error: unknown): void {
+  if (error instanceof InvalidCollectionNameError) {
+    res.status(400).json({
+      error: "invalid_collection",
+      collection: error.collection,
+    });
+    return;
+  }
   if (error instanceof RecordNotFoundError) {
     res.status(404).json({
       error: "not_found",

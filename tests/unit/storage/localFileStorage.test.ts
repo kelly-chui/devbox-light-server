@@ -39,11 +39,30 @@ describe("LocalFileStorage", () => {
     expect(await storage.get("missing.txt")).toBeUndefined();
   });
 
+  it("keeps files available across storage instances", async () => {
+    const content = encoder.encode("persisted");
+
+    await storage.put("notes/hello.txt", content);
+
+    const reloaded = new LocalFileStorage(rootDirectory);
+
+    expect(await reloaded.get("notes/hello.txt")).toEqual(content);
+  });
+
   it("deletes existing files", async () => {
     await storage.put("greeting.txt", encoder.encode("hello"));
 
     expect(await storage.delete("greeting.txt")).toBe(true);
     expect(await storage.get("greeting.txt")).toBeUndefined();
+  });
+
+  it("persists deletions across storage instances", async () => {
+    await storage.put("greeting.txt", encoder.encode("hello"));
+    await storage.delete("greeting.txt");
+
+    const reloaded = new LocalFileStorage(rootDirectory);
+
+    expect(await reloaded.get("greeting.txt")).toBeUndefined();
   });
 
   it("returns false when deleting a missing file", async () => {
@@ -72,9 +91,9 @@ describe("LocalFileStorage", () => {
   it("rejects absolute keys", async () => {
     const absoluteKey = path.join(rootDirectory, "escape.txt");
 
-    await expect(storage.put(absoluteKey, encoder.encode("nope"))).rejects.toBeInstanceOf(
-      PathTraversalError,
-    );
+    await expect(
+      storage.put(absoluteKey, encoder.encode("nope")),
+    ).rejects.toBeInstanceOf(PathTraversalError);
     await expect(storage.get(absoluteKey)).rejects.toBeInstanceOf(
       PathTraversalError,
     );
@@ -90,7 +109,9 @@ describe("LocalFileStorage", () => {
       await expect(
         storage.put(key, encoder.encode("nope")),
       ).rejects.toBeInstanceOf(PathTraversalError);
-      await expect(storage.get(key)).rejects.toBeInstanceOf(PathTraversalError);
+      await expect(storage.get(key)).rejects.toBeInstanceOf(
+        PathTraversalError,
+      );
       await expect(storage.delete(key)).rejects.toBeInstanceOf(
         PathTraversalError,
       );
