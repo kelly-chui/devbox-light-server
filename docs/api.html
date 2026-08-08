@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>devbox-light-server — API Reference</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #59636e;
+    --border: #d1d9e0;
+    --accent: #0969da;
+    --code-bg: #f6f8fa;
+    --method-get: #1a7f37;
+    --method-post: #8250df;
+    --method-put: #9a6700;
+    --method-delete: #cf222e;
+    --radius: 6px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.6;
+  }
+  .container { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: 1.9em; margin-bottom: 4px; }
+  h2 { font-size: 1.4em; margin-top: 48px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.1em; margin-top: 32px; }
+  p, li { color: var(--fg); }
+  .subtitle { color: var(--muted); margin-top: 0; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; font-size: 0.95em; }
+  th { background: var(--code-bg); }
+  .method {
+    display: inline-block;
+    min-width: 56px;
+    text-align: center;
+    font-size: 0.78em;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #fff;
+  }
+  .get { background: var(--method-get); }
+  .post { background: var(--method-post); }
+  .put { background: var(--method-put); }
+  .delete { background: var(--method-delete); }
+  .endpoint { font-weight: 600; }
+  .error-list { list-style: none; padding: 0; }
+  .error-list li { padding: 4px 0; }
+  nav.toc { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; }
+  nav.toc ul { margin: 8px 0 0; padding-left: 20px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; color: var(--muted); font-size: 0.9em; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>devbox-light-server — API Reference</h1>
+<p class="subtitle">경량 개발 서버의 REST API 문서. 모든 요청은 <code>http://localhost:3000</code> 기준입니다.</p>
+
+<h2>공통 규약</h2>
+<ul>
+  <li>성공 응답은 JSON 객체이며, 오류는 <code>{ "error": "..." }</code> 형식의 JSON입니다.</li>
+  <li>포트는 <code>3000</code> 고정입니다 (Docker: <code>-p 3000:3000</code>).</li>
+  <li>DB/Auth의 요청 본문에는 <code>Content-Type: application/json</code> 헤더가 필요합니다.</li>
+</ul>
+
+<nav class="toc">
+  <strong>목차</strong>
+  <ul>
+    <li><a href="#system">System</a></li>
+    <li><a href="#collections">DB 컬렉션</a></li>
+    <li><a href="#auth">Auth</a></li>
+    <li><a href="#files">파일 저장소</a></li>
+    <li><a href="#examples">curl 예제 모음</a></li>
+  </ul>
+</nav>
+
+<h2 id="system">System</h2>
+<table>
+  <thead><tr><th>메서드</th><th>경로</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><span class="method get">GET</span></td><td class="endpoint">/system/status</td><td><code>{ "status": "ok", "timestamp": "&lt;ISO&gt;" }</code></td></tr>
+    <tr><td><span class="method get">GET</span></td><td class="endpoint">/system/uptime</td><td><code>{ "uptimeSeconds": 12 }</code></td></tr>
+  </tbody>
+</table>
+
+<h2 id="collections">DB 컬렉션</h2>
+<p>레코드는 <code>{ "id", "data" }</code> 형태입니다. <code>data</code>에는 임의의 JSON 객체가 들어갑니다.</p>
+<table>
+  <thead><tr><th>메서드</th><th>경로</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><span class="method get">GET</span></td><td class="endpoint">/collections/:collection</td><td>컬렉션 전체 목록 → <code>{ "collection", "records": [{ "id", "data" }] }</code></td></tr>
+    <tr><td><span class="method get">GET</span></td><td class="endpoint">/collections/:collection/:id</td><td>단건 조회 → <code>{ "id", "data" }</code></td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="endpoint">/collections/:collection</td><td>레코드 생성. 본문에 임의 JSON 객체 → <code>201</code> <code>{ "id", "data" }</code></td></tr>
+    <tr><td><span class="method put">PUT</span></td><td class="endpoint">/collections/:collection/:id</td><td>전체 교체 → <code>{ "id", "data" }</code></td></tr>
+    <tr><td><span class="method delete">DELETE</span></td><td class="endpoint">/collections/:collection/:id</td><td>삭제 → <code>204</code></td></tr>
+  </tbody>
+</table>
+
+<h3>예시</h3>
+<pre><code>curl -X POST localhost:3000/collections/users \
+  -H 'Content-Type: application/json' -d '{"name":"Ada"}'
+# {"id":"1","data":{"name":"Ada"}}</code></pre>
+
+<h3>오류</h3>
+<ul class="error-list">
+  <li><code>400 invalid_collection</code> — 컬렉션명이 비었거나 유효하지 않음 (<code>/collections/..%2Fsecret</code> 등)</li>
+  <li><code>400 invalid_record</code> — 본문이 JSON 객체가 아님</li>
+  <li><code>400 invalid_params</code> — id 파라미터 오류</li>
+  <li><code>404 not_found</code> — <code>{ "error": "not_found", "collection", "id" }</code></li>
+</ul>
+
+<h2 id="auth">Auth</h2>
+<table>
+  <thead><tr><th>메서드</th><th>경로</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><span class="method post">POST</span></td><td class="endpoint">/auth/login</td><td>본문 <code>{ "userId": "1" }</code> → <code>{ "accessToken", "user" }</code>. <code>users</code> 컬렉션에 해당 id가 있어야 함</td></tr>
+    <tr><td><span class="method get">GET</span></td><td class="endpoint">/auth/me</td><td><code>Authorization: Bearer &lt;token&gt;</code> → 인증된 사용자 <code>{ "id", "data" }</code></td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="endpoint">/auth/logout</td><td><code>Authorization: Bearer &lt;token&gt;</code> → <code>204</code></td></tr>
+  </tbody>
+</table>
+
+<h3>예시</h3>
+<pre><code>curl -X POST localhost:3000/auth/login \
+  -H 'Content-Type: application/json' -d '{"userId":"1"}'
+# {"accessToken":"&lt;uuid&gt;","user":{"id":"1","data":{...}}}
+
+curl localhost:3000/auth/me -H 'Authorization: Bearer &lt;accessToken&gt;'</code></pre>
+
+<h3>오류</h3>
+<ul class="error-list">
+  <li><code>400 invalid_user_id</code></li>
+  <li><code>401 user_not_found</code> — <code>{ "error": "user_not_found", "userId" }</code></li>
+  <li><code>401 unauthorized</code> — Bearer 토큰이 없거나 유효하지 않음</li>
+</ul>
+
+<h2 id="files">파일 저장소</h2>
+<p><code>key</code>는 저장소 루트(<code>.data/files/</code>) 기준 상대 경로입니다. 중첩 경로(<code>notes/hello.txt</code>)가 지원되며 부모 디렉토리가 자동 생성됩니다.</p>
+<table>
+  <thead><tr><th>메서드</th><th>경로</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><span class="method get">GET</span></td><td class="endpoint">/files/:key</td><td>파일 내용 반환 (<code>application/octet-stream</code>)</td></tr>
+    <tr><td><span class="method put">PUT</span></td><td class="endpoint">/files/:key</td><td>원시 바디 업로드 (최대 50MB) → <code>204</code></td></tr>
+    <tr><td><span class="method delete">DELETE</span></td><td class="endpoint">/files/:key</td><td>삭제 → <code>204</code></td></tr>
+  </tbody>
+</table>
+
+<h3>예시</h3>
+<pre><code>curl -X PUT --data-binary @image.png -i localhost:3000/files/img/image.png
+curl localhost:3000/files/img/image.png -o downloaded.png</code></pre>
+
+<h3>오류</h3>
+<ul class="error-list">
+  <li><code>400 invalid_key</code> — key가 비어 있음</li>
+  <li><code>400 invalid_body</code> — PUT 본문이 바이너리가 아님</li>
+  <li><code>404 not_found</code> — <code>{ "error": "not_found", "key" }</code></li>
+  <li>경로 탈출(<code>/files/../escape.txt</code> 등)은 저장소 밖을 벗어날 수 없습니다</li>
+</ul>
+
+<h2 id="examples">curl 예제 모음</h2>
+<pre><code># DB
+curl -s -X POST localhost:3000/collections/users -H 'Content-Type: application/json' -d '{"name":"Ada"}'
+curl -s localhost:3000/collections/users
+curl -s localhost:3000/collections/users/1
+curl -s -X PUT localhost:3000/collections/users/1 -H 'Content-Type: application/json' -d '{"name":"Grace"}'
+curl -s -X DELETE -i localhost:3000/collections/users/1
+
+# Auth (users 컬렉션에 id가 먼저 존재해야 함)
+curl -s -X POST localhost:3000/auth/login -H 'Content-Type: application/json' -d '{"userId":"1"}'
+curl -s localhost:3000/auth/me -H 'Authorization: Bearer &lt;accessToken&gt;'
+
+# Files
+curl -s -X PUT --data-binary 'hello' -i localhost:3000/files/notes/hello.txt
+curl -s localhost:3000/files/notes/hello.txt
+
+# 영속 확인 — 서버 재시작 후에도 유지되는지
+curl -s localhost:3000/collections/users</code></pre>
+
+<footer>devbox-light-server · 경량 개발 서버 API 문서</footer>
+</div>
+</body>
+</html>
