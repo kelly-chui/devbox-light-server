@@ -62,15 +62,16 @@ describe("JsonFileRecordStore", () => {
     expect(await reloaded.get("users", created.id)).toEqual(created);
   });
 
-  it("continues the id sequence across instances", async () => {
-    await createUser("Ada");
-    await createUser("Linus");
+  it("generates UUIDs across instances", async () => {
+    const first = await createUser("Ada");
 
     const reloaded = new JsonFileRecordStore(rootDirectory);
-    const third = await reloaded.create("users", { name: "Grace" });
+    const second = await reloaded.create("users", { name: "Grace" });
 
-    expect(third.id).toBe("3");
-    expect(await reloaded.list("users")).toHaveLength(3);
+    expect(first.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(second.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(second.id).not.toBe(first.id);
+    expect(await reloaded.list("users")).toHaveLength(2);
   });
 
   it("replaces existing records", async () => {
@@ -123,15 +124,13 @@ describe("JsonFileRecordStore", () => {
     expect(await store.delete("missing", "1")).toBe(false);
   });
 
-  it("preserves the id sequence after deleting records", async () => {
+  it("generates a new UUID after deleting records", async () => {
     const created = await createUser();
     await store.delete("users", created.id);
-    await store.create("users", { name: "Ada" });
+    const replacement = await store.create("users", { name: "Ada" });
 
-    const reloaded = new JsonFileRecordStore(rootDirectory);
-    const next = await reloaded.create("users", { name: "Linus" });
-
-    expect(next.id).toBe("3");
+    expect(replacement.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(replacement.id).not.toBe(created.id);
   });
 
   it("does not leak stored data references", async () => {
@@ -208,7 +207,7 @@ describe("JsonFileRecordStore", () => {
   });
 
   it("writes valid JSON that round-trips", async () => {
-    await createUser("Ada");
+    const created = await createUser("Ada");
 
     const content = await readFile(
       path.join(rootDirectory, "users.json"),
@@ -216,10 +215,24 @@ describe("JsonFileRecordStore", () => {
     );
 
     expect(JSON.parse(content)).toEqual({
-      nextId: 2,
       records: {
-        "1": { name: "Ada" },
+        [created.id]: { name: "Ada" },
       },
+    });
+  });
+
+  it("reads the current file contents for every operation", async () => {
+    const created = await createUser();
+    await writeFile(
+      path.join(rootDirectory, "users.json"),
+      JSON.stringify({
+        records: { [created.id]: { name: "Changed externally" } },
+      }),
+    );
+
+    expect(await store.get("users", created.id)).toEqual({
+      id: created.id,
+      data: { name: "Changed externally" },
     });
   });
 });

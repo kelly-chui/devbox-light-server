@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { readJsonFile, writeJsonFile } from "../../util/jsonFile.js";
 import {
@@ -11,13 +12,7 @@ import type { RecordData, StoredRecord } from "../types.js";
 const COLLECTION_NAME_PATTERN = /^[a-zA-Z0-9._-]+$/;
 
 type PersistedCollection = {
-  nextId: number;
   records: Record<string, RecordData>;
-};
-
-type CollectionStore = {
-  nextId: number;
-  records: Map<string, RecordData>;
 };
 
 function isPersistedCollection(value: unknown): value is PersistedCollection {
@@ -26,7 +21,6 @@ function isPersistedCollection(value: unknown): value is PersistedCollection {
   }
   const candidate = value as PersistedCollection;
   return (
-    typeof candidate.nextId === "number" &&
     typeof candidate.records === "object" &&
     candidate.records !== null &&
     !Array.isArray(candidate.records)
@@ -35,7 +29,6 @@ function isPersistedCollection(value: unknown): value is PersistedCollection {
 
 export class JsonFileRecordStore implements RecordStore {
   private readonly rootDirectory: string;
-  private readonly collections = new Map<string, CollectionStore>();
 
   constructor(rootDirectory: string) {
     this.rootDirectory = path.resolve(rootDirectory);
@@ -51,51 +44,30 @@ export class JsonFileRecordStore implements RecordStore {
     }
   }
 
-  private async loadCollection(collection: string): Promise<CollectionStore> {
+  private async readCollection(collection: string): Promise<PersistedCollection> {
     this.validateCollection(collection);
-    const existing = this.collections.get(collection);
-    if (existing !== undefined) {
-      return existing;
-    }
-
     const filePath = this.collectionFilePath(collection);
     const persisted = await readJsonFile(filePath);
-    const store: CollectionStore = { nextId: 1, records: new Map() };
-
     if (persisted !== undefined) {
       if (!isPersistedCollection(persisted)) {
         throw new InvalidDatabaseFileError(filePath);
       }
-      store.nextId = persisted.nextId;
-      for (const [id, data] of Object.entries(persisted.records)) {
-        store.records.set(id, data);
-      }
+      return persisted;
     }
-
-    this.collections.set(collection, store);
-    return store;
-  }
-
-  private async persist(
-    collection: string,
-    store: CollectionStore,
-  ): Promise<void> {
-    const records = Object.fromEntries(store.records);
-    const value: PersistedCollection = { nextId: store.nextId, records };
-    await writeJsonFile(this.collectionFilePath(collection), value);
+    return { records: {} };
   }
 
   async list(collection: string): Promise<StoredRecord[]> {
-    const store = await this.loadCollection(collection);
-    return Array.from(store.records.entries()).map(([id, data]) => ({
+    const store = await this.readCollection(collection);
+    return Object.entries(store.records).map(([id, data]) => ({
       id,
       data: structuredClone(data),
     }));
   }
 
   async get(collection: string, id: string): Promise<StoredRecord | undefined> {
-    const store = await this.loadCollection(collection);
-    const data = store.records.get(id);
+    const store = await this.readCollection(collection);
+    const data = store.records[id];
     if (data === undefined) {
       return undefined;
     }
@@ -103,11 +75,12 @@ export class JsonFileRecordStore implements RecordStore {
   }
 
   async create(collection: string, data: RecordData): Promise<StoredRecord> {
-    const store = await this.loadCollection(collection);
-    const id = String(store.nextId);
-    store.nextId += 1;
-    store.records.set(id, structuredClone(data));
-    await this.persist(collection, store);
+    const store = await this.readCollection(collection);
+    const id = randomUUID();
+    const next = {
+      records: { ...store.records, [id]: structuredClone(data) },
+    };
+    await writeJsonFile(this.collectionFilePath(collection), next);
     return { id, data: structuredClone(data) };
   }
 
@@ -116,19 +89,24 @@ export class JsonFileRecordStore implements RecordStore {
     id: string,
     data: RecordData,
   ): Promise<void> {
-    const store = await this.loadCollection(collection);
-    if (!store.records.has(id)) {
+    const store = await this.readCollection(collection);
+    if (!(id in store.records)) {
       throw new RecordNotFoundError(collection, id);
     }
-    store.records.set(id, structuredClone(data));
-    await this.persist(collection, store);
+    await writeJsonFile(this.collectionFilePath(collection), {
+      records: { ...store.records, [id]: structuredClone(data) },
+    });
   }
 
   async delete(collection: string, id: string): Promise<boolean> {
-    const store = await this.loadCollection(collection);
-    const deleted = store.records.delete(id);
+    const store = await this.readCollection(collection);
+    const deleted = id in store.records;
     if (deleted) {
-      await this.persist(collection, store);
+      const records = { ...store.records };
+      delete records[id];
+      await writeJsonFile(this.collectionFilePath(collection), {
+        records,
+      });
     }
     return deleted;
   }

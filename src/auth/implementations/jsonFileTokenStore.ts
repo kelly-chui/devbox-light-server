@@ -6,13 +6,16 @@ import type { TokenStore } from "../tokenStore.js";
 type TokenMap = Record<string, string>;
 
 function isTokenMap(value: unknown): value is TokenMap {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.values(value).every((userId) => typeof userId === "string")
+  );
 }
 
 export class JsonFileTokenStore implements TokenStore {
   private readonly filePath: string;
-  private tokens: TokenMap = {};
-  private loaded = false;
 
   constructor(rootDirectory: string) {
     this.filePath = path.join(
@@ -22,40 +25,33 @@ export class JsonFileTokenStore implements TokenStore {
     );
   }
 
-  private async ensureLoaded(): Promise<void> {
-    if (this.loaded) {
-      return;
-    }
+  private async readTokens(): Promise<TokenMap> {
     const persisted = await readJsonFile(this.filePath);
     if (persisted !== undefined) {
       if (!isTokenMap(persisted)) {
         throw new InvalidTokenFileError(this.filePath);
       }
-      this.tokens = persisted;
+      return persisted;
     }
-    this.loaded = true;
-  }
-
-  private async persist(): Promise<void> {
-    await writeJsonFile(this.filePath, this.tokens);
+    return {};
   }
 
   async save(token: string, userId: string): Promise<void> {
-    await this.ensureLoaded();
-    this.tokens[token] = userId;
-    await this.persist();
+    const tokens = await this.readTokens();
+    tokens[token] = userId;
+    await writeJsonFile(this.filePath, tokens);
   }
 
   async getUserId(token: string): Promise<string | undefined> {
-    await this.ensureLoaded();
-    return this.tokens[token];
+    const tokens = await this.readTokens();
+    return tokens[token];
   }
 
   async remove(token: string): Promise<void> {
-    await this.ensureLoaded();
-    if (this.tokens[token] !== undefined) {
-      delete this.tokens[token];
-      await this.persist();
+    const tokens = await this.readTokens();
+    if (tokens[token] !== undefined) {
+      delete tokens[token];
+      await writeJsonFile(this.filePath, tokens);
     }
   }
 }

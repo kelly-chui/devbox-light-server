@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -58,5 +58,15 @@ describe("JsonFileTokenStore", () => {
     const reloaded = new JsonFileTokenStore(rootDirectory);
 
     expect(await reloaded.getUserId("token-abc")).toBeUndefined();
+  });
+
+  it("reads the current file contents for every operation", async () => {
+    await store.save("token-abc", "user-123");
+    await writeFile(
+      path.join(rootDirectory, "auth", "tokens.json"),
+      JSON.stringify({ "token-abc": "user-updated" }),
+    );
+
+    expect(await store.getUserId("token-abc")).toBe("user-updated");
   });
 });
