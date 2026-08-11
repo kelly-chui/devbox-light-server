@@ -1,5 +1,10 @@
 import app from "./app.js"
 
-app.listen(3000, () => {
-    console.log("listening on port 3000");
+const configuredPort = Number.parseInt(process.env.PORT ?? "3000", 10);
+const port = Number.isInteger(configuredPort) && configuredPort > 0 && configuredPort <= 65535
+  ? configuredPort
+  : 3000;
+
+app.listen(port, () => {
+    console.log(`listening on port ${port}`);
 });

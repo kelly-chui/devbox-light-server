@@ -12,7 +12,7 @@
 
 ## 시작하기 (Docker)
 
-[Docker](https://www.docker.com/)가 설치되어 있다면 빌드 후 바로 실행할 수 있습니다. 서버는 포트 3000에서 동작합니다.
+[Docker](https://www.docker.com/)가 설치되어 있다면 빌드 후 바로 실행할 수 있습니다. 기본 포트는 3000이며 `PORT` 환경변수로 변경할 수 있습니다.
 
 ```bash
 docker build -t devbox-light-server .
@@ -26,11 +26,17 @@ docker run -p 3000:3000 -v "$(pwd)/.data:/app/.data" devbox-light-server
 docker run -p 3000:3000 -e PERSISTENCE=memory devbox-light-server
 ```
 
+컨테이너에는 `/system/status` 기반 healthcheck가 설정되어 있습니다. 다른 포트를 사용할 때는 호스트 포트와 `PORT`를 함께 변경합니다.
+
+```bash
+docker run -p 8080:8080 -e PORT=8080 devbox-light-server
+```
+
 ### 로컬 개발 (Docker 없이)
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000 에서 실행 (포트 3000 고정)
+npm run dev      # http://localhost:3000 에서 실행
 ```
 
 테스트:
@@ -69,6 +75,10 @@ json 모드에서 데이터가 저장되는 루트 디렉토리입니다. Docker
 
 - 컬렉션 파일에 `nextId`가 저장되어 재시작 후에도 ID가 재사용되지 않습니다.
 - 파일 쓰기는 임시 파일 작성 후 `rename`하는 원자적 방식으로, 쓰기 중 서버가 죽어도 파일이 손상되지 않습니다.
+
+### `PORT` — 서버 포트 (기본 `3000`)
+
+서버가 수신할 포트입니다. Docker에서는 `-e PORT=8080 -p 8080:8080`처럼 설정합니다.
 
 ## API 레퍼런스
 
