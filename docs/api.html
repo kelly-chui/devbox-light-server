@@ -82,8 +82,9 @@
 
 <h2>공통 규약</h2>
 <ul>
-  <li>성공 응답은 JSON 객체이며, 오류는 <code>{ "error": "..." }</code> 형식의 JSON입니다.</li>
-  <li>포트는 <code>3000</code> 고정입니다 (Docker: <code>-p 3000:3000</code>).</li>
+  <li>System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다운로드는 바이너리이고, <code>204</code> 응답은 본문이 없습니다.</li>
+  <li>문서화된 오류 응답은 <code>{ "error": "..." }</code> 형식의 JSON입니다.</li>
+  <li>기본 포트는 <code>3000</code>이며 <code>PORT</code> 환경변수로 변경할 수 있습니다 (Docker 예: <code>-e PORT=8080 -p 8080:8080</code>).</li>
   <li>DB/Auth의 요청 본문에는 <code>Content-Type: application/json</code> 헤더가 필요합니다.</li>
 </ul>
 
@@ -108,7 +109,7 @@
 </table>
 
 <h2 id="collections">DB 컬렉션</h2>
-<p>레코드는 <code>{ "id", "data" }</code> 형태입니다. <code>data</code>에는 임의의 JSON 객체가 들어갑니다.</p>
+<p>레코드는 <code>{ "id", "data" }</code> 형태입니다. <code>id</code>는 생성 시 발급되는 UUID이고, <code>data</code>에는 임의의 JSON 객체가 들어갑니다.</p>
 <table>
   <thead><tr><th>메서드</th><th>경로</th><th>설명</th></tr></thead>
   <tbody>
@@ -123,7 +124,7 @@
 <h3>예시</h3>
 <pre><code>curl -X POST localhost:3000/collections/users \
   -H 'Content-Type: application/json' -d '{"name":"Ada"}'
-# {"id":"1","data":{"name":"Ada"}}</code></pre>
+# {"id":"550e8400-e29b-41d4-a716-446655440000","data":{"name":"Ada"}}</code></pre>
 
 <h3>오류</h3>
 <ul class="error-list">
@@ -137,7 +138,7 @@
 <table>
   <thead><tr><th>메서드</th><th>경로</th><th>설명</th></tr></thead>
   <tbody>
-    <tr><td><span class="method post">POST</span></td><td class="endpoint">/auth/login</td><td>본문 <code>{ "userId": "1" }</code> → <code>{ "accessToken", "user" }</code>. <code>users</code> 컬렉션에 해당 id가 있어야 함</td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="endpoint">/auth/login</td><td>본문 <code>{ "userId": "&lt;user-id&gt;" }</code> → <code>{ "accessToken", "user" }</code>. <code>users</code> 컬렉션에 해당 id가 있어야 함</td></tr>
     <tr><td><span class="method get">GET</span></td><td class="endpoint">/auth/me</td><td><code>Authorization: Bearer &lt;token&gt;</code> → 인증된 사용자 <code>{ "id", "data" }</code></td></tr>
     <tr><td><span class="method post">POST</span></td><td class="endpoint">/auth/logout</td><td><code>Authorization: Bearer &lt;token&gt;</code> → <code>204</code></td></tr>
   </tbody>
@@ -145,8 +146,8 @@
 
 <h3>예시</h3>
 <pre><code>curl -X POST localhost:3000/auth/login \
-  -H 'Content-Type: application/json' -d '{"userId":"1"}'
-# {"accessToken":"&lt;uuid&gt;","user":{"id":"1","data":{...}}}
+  -H 'Content-Type: application/json' -d '{"userId":"&lt;user-id&gt;"}'
+# {"accessToken":"&lt;uuid&gt;","user":{"id":"&lt;user-id&gt;","data":{...}}}
 
 curl localhost:3000/auth/me -H 'Authorization: Bearer &lt;accessToken&gt;'</code></pre>
 
@@ -184,12 +185,12 @@ curl localhost:3000/files/img/image.png -o downloaded.png</code></pre>
 <pre><code># DB
 curl -s -X POST localhost:3000/collections/users -H 'Content-Type: application/json' -d '{"name":"Ada"}'
 curl -s localhost:3000/collections/users
-curl -s localhost:3000/collections/users/1
-curl -s -X PUT localhost:3000/collections/users/1 -H 'Content-Type: application/json' -d '{"name":"Grace"}'
-curl -s -X DELETE -i localhost:3000/collections/users/1
+curl -s localhost:3000/collections/users/&lt;user-id&gt;
+curl -s -X PUT localhost:3000/collections/users/&lt;user-id&gt; -H 'Content-Type: application/json' -d '{"name":"Grace"}'
+curl -s -X DELETE -i localhost:3000/collections/users/&lt;user-id&gt;
 
-# Auth (users 컬렉션에 id가 먼저 존재해야 함)
-curl -s -X POST localhost:3000/auth/login -H 'Content-Type: application/json' -d '{"userId":"1"}'
+# Auth (위에서 생성된 user-id 사용)
+curl -s -X POST localhost:3000/auth/login -H 'Content-Type: application/json' -d '{"userId":"&lt;user-id&gt;"}'
 curl -s localhost:3000/auth/me -H 'Authorization: Bearer &lt;accessToken&gt;'
 
 # Files
