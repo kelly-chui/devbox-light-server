@@ -73,7 +73,7 @@ json 모드에서 데이터가 저장되는 루트 디렉토리입니다. Docker
     └── notes/hello.txt
 ```
 
-- 레코드 ID는 생성할 때마다 UUID로 발급됩니다.
+- 레코드 ID는 문자열입니다. json 모드는 UUID를, memory 모드는 컬렉션별로 `"1"`부터 증가하는 ID를 발급합니다.
 - DB와 Auth의 JSON은 임시 파일 작성 후 `rename`하는 원자적 방식으로 저장됩니다. 파일 저장소의 바이너리 파일은 대상 경로에 바로 쓰여집니다.
 
 ### `PORT` — 서버 포트 (기본 `3000`)
@@ -157,7 +157,7 @@ Route → Service → Interface → Implementation
 - **최신 데이터 읽기** — DB와 Auth는 각 작업마다 JSON 파일을 다시 읽음
 - **즉시 반영** — DB·Auth·파일 변경 시 즉시 디스크에 저장
 - **원자적 JSON 쓰기** — DB와 Auth JSON은 `<file>.tmp`에 쓴 뒤 `rename`
-- **UUID ID** — 레코드 생성 시 새 UUID를 발급
+- **모드별 ID** — json은 UUID, memory는 컬렉션별 증가 문자열을 발급
 - **경로 안전** — 컬렉션명 검증, 파일 키의 경로 탈출 차단
 
 ### 프로젝트 가이드

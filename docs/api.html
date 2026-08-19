@@ -109,7 +109,7 @@
 </table>
 
 <h2 id="collections">DB 컬렉션</h2>
-<p>레코드는 <code>{ "id", "data" }</code> 형태입니다. <code>id</code>는 생성 시 발급되는 UUID이고, <code>data</code>에는 임의의 JSON 객체가 들어갑니다.</p>
+<p>레코드는 <code>{ "id", "data" }</code> 형태입니다. <code>id</code>는 불투명한 문자열로 다루어야 합니다. json 모드는 UUID를, memory 모드는 컬렉션별 증가 ID를 발급합니다. <code>data</code>에는 임의의 JSON 객체가 들어갑니다.</p>
 <table>
   <thead><tr><th>메서드</th><th>경로</th><th>설명</th></tr></thead>
   <tbody>
