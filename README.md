@@ -103,7 +103,7 @@ json 모드에서 데이터가 저장되는 루트 디렉토리입니다. Docker
 | PUT | `/files/:key` | 파일 업로드 (최대 50MB) |
 | DELETE | `/files/:key` | 파일 삭제 |
 
-System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다운로드는 바이너리를 반환하고, `204` 응답은 본문이 없습니다. 라우트에서 처리하는 오류는 `{ "error": "..." }` 형식의 JSON입니다. 상세 응답·오류 코드·curl 예제는 [docs/api.html](docs/api.html)을 참고하세요.
+System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다운로드는 바이너리를 반환하고, `204` 응답은 본문이 없습니다. 모든 오류 응답은 `{ "error": "..." }` 형식의 JSON입니다. 상세 응답·오류 코드·curl 예제는 [docs/api.html](docs/api.html)을 참고하세요.
 
 ## 알려진 제한 사항
 
@@ -111,7 +111,6 @@ System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다�
 - **로그인은 userId만** — 비밀번호 등 자격 증명이 없고, 토큰에 만료가 없어 `tokens.json`이 계속 쌓입니다
 - **JSON 바디 100KB 제한** — `express.json()` 기본값. 큰 레코드는 413 오류
 - **파일 응답 고정 `application/octet-stream`** — 확장자별 MIME, Range(부분 요청), ETag 미지원
-- **공통 오류 핸들러 미지원** — 잘못된 JSON 본문이나 예상하지 못한 오류는 Express 기본 응답을 사용
 - **단일 프로세스 가정** — 같은 디렉토리를 여러 프로세스가 쓰면 마지막 쓰기 기준
 - **손상된 파일 발견 시** — 조용히 초기화하지 않고 명시적 에러로 실패
 
@@ -124,6 +123,7 @@ src/
 ├── index.ts          # 서버 진입점 (PORT, 기본 3000)
 ├── app.ts            # DI 구성 및 라우트 연결
 ├── runtime.ts        # PERSISTENCE 모드에 따라 스토어 선택
+├── http/              # 404 및 공통 JSON 오류 처리
 ├── system/           # 시스템 상태
 ├── db/               # 레코드 저장소
 ├── auth/             # 토큰 저장소·인증 서비스

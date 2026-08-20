@@ -8,6 +8,7 @@ import { createStorageRouter } from "./storage/route.js";
 import { AuthService } from "./auth/authService.js";
 import { createAuthRouter } from "./auth/route.js";
 import { createRuntimeStores, readPersistenceMode } from "./runtime.js";
+import { jsonErrorHandler, notFoundHandler } from "./http/errorHandlers.js";
 
 const app = express();
 
@@ -31,5 +32,8 @@ app.use("/auth", createAuthRouter(authService));
 
 const storageService = new StorageService(fileStorage);
 app.use("/files", createStorageRouter(storageService));
+
+app.use(notFoundHandler);
+app.use(jsonErrorHandler);
 
 export default app;

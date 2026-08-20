@@ -1,6 +1,10 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import {
+  jsonErrorHandler,
+  notFoundHandler,
+} from "../../src/http/errorHandlers.js";
 
 let app: Express;
 const UUID_PATTERN =
@@ -149,5 +153,41 @@ describe("HTTP API contract", () => {
 
     const unauthorized = await request(app).get("/auth/me").expect(401);
     expect(unauthorized.body).toEqual({ error: "unauthorized" });
+
+    const malformedJson = await request(app)
+      .post("/collections/http-contract-invalid")
+      .set("Content-Type", "application/json")
+      .send('{"name":')
+      .expect(400);
+    expect(malformedJson.body).toEqual({ error: "invalid_json" });
+
+    const oversizedJson = await request(app)
+      .post("/collections/http-contract-invalid")
+      .send({ value: "x".repeat(101 * 1024) })
+      .expect(413);
+    expect(oversizedJson.body).toEqual({ error: "payload_too_large" });
+
+    const unknownRoute = await request(app).get("/unknown-route").expect(404);
+    expect(unknownRoute.body).toEqual({ error: "not_found" });
+  });
+
+  it("hides details of unexpected errors", async () => {
+    const failingApp = express();
+    failingApp.get("/boom", async () => {
+      throw new Error("sensitive detail");
+    });
+    failingApp.use(notFoundHandler);
+    failingApp.use(jsonErrorHandler);
+
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      const response = await request(failingApp).get("/boom").expect(500);
+      expect(response.body).toEqual({ error: "internal_server_error" });
+      expect(response.text).not.toContain("sensitive detail");
+      expect(errorLog).toHaveBeenCalledOnce();
+    } finally {
+      errorLog.mockRestore();
+    }
   });
 });
