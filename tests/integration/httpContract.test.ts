@@ -12,6 +12,7 @@ const UUID_PATTERN =
 
 beforeAll(async () => {
   vi.stubEnv("PERSISTENCE", "memory");
+  vi.stubEnv("CORS_ORIGIN", "*");
   ({ default: app } = await import("../../src/app.js"));
 });
 
@@ -28,6 +29,29 @@ describe("HTTP API contract", () => {
     expect(new Date(response.body.timestamp).toISOString()).toBe(
       response.body.timestamp,
     );
+  });
+
+  it("supports browser CORS requests and preflight", async () => {
+    const response = await request(app)
+      .get("/system/status")
+      .set("Origin", "http://localhost:5173")
+      .expect(200);
+    expect(response.headers["access-control-allow-origin"]).toBe("*");
+
+    const preflight = await request(app)
+      .options("/files/http-contract/data.bin")
+      .set("Origin", "http://localhost:5173")
+      .set("Access-Control-Request-Method", "PUT")
+      .set("Access-Control-Request-Headers", "authorization,content-type")
+      .expect(204);
+    expect(preflight.headers["access-control-allow-origin"]).toBe("*");
+    expect(preflight.headers["access-control-allow-methods"]).toBe(
+      "GET,POST,PUT,DELETE,OPTIONS",
+    );
+    expect(preflight.headers["access-control-allow-headers"]).toBe(
+      "Authorization,Content-Type",
+    );
+    expect(preflight.text).toBe("");
   });
 
   it("supports the collection CRUD flow", async () => {

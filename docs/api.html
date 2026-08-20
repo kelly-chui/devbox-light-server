@@ -85,6 +85,7 @@
   <li>System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다운로드는 바이너리이고, <code>204</code> 응답은 본문이 없습니다.</li>
   <li>모든 오류 응답은 <code>{ "error": "..." }</code> 형식의 JSON입니다.</li>
   <li>기본 포트는 <code>3000</code>이며 <code>PORT</code> 환경변수로 변경할 수 있습니다 (Docker 예: <code>-e PORT=8080 -p 8080:8080</code>).</li>
+  <li>CORS는 기본으로 모든 Origin을 허용하며, <code>CORS_ORIGIN</code> 환경변수로 단일 Origin을 지정할 수 있습니다. Cookie 기반 credential CORS는 지원하지 않습니다.</li>
   <li>DB/Auth의 요청 본문에는 <code>Content-Type: application/json</code> 헤더가 필요합니다.</li>
 </ul>
 

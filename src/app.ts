@@ -9,9 +9,11 @@ import { AuthService } from "./auth/authService.js";
 import { createAuthRouter } from "./auth/route.js";
 import { createRuntimeStores, readPersistenceMode } from "./runtime.js";
 import { jsonErrorHandler, notFoundHandler } from "./http/errorHandlers.js";
+import { createCorsMiddleware, readCorsOrigin } from "./http/cors.js";
 
 const app = express();
 
+app.use(createCorsMiddleware(readCorsOrigin(process.env.CORS_ORIGIN)));
 app.use(express.json());
 
 const systemService = new SystemService();

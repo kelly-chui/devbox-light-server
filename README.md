@@ -81,6 +81,17 @@ json 모드에서 데이터가 저장되는 루트 디렉토리입니다. Docker
 서버가 수신할 포트입니다. Docker에서는 `-e PORT=8080 -p 8080:8080`처럼 설정합니다.
 정수로 파싱할 수 없거나 `1`–`65535` 범위 밖의 값은 기본값 `3000`으로 대체됩니다.
 
+### `CORS_ORIGIN` — 허용할 Origin (기본 `*`)
+
+브라우저의 cross-origin 요청을 기본으로 모두 허용합니다. 특정 Origin만 허용하려면 단일 값을 설정합니다.
+
+```bash
+CORS_ORIGIN=http://localhost:5173 npm run dev
+docker run -p 3000:3000 -e CORS_ORIGIN=http://localhost:5173 devbox-light-server
+```
+
+`Authorization`·`Content-Type` 헤더와 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS` 메서드의 preflight를 지원합니다. Cookie 기반 credential CORS는 지원하지 않습니다.
+
 ## API 레퍼런스
 
 모든 엔드포인트(메서드·경로·응답·오류 형식과 curl 예제)는 HTML 문서로 제공됩니다.
@@ -107,7 +118,6 @@ System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다�
 
 ## 알려진 제한 사항
 
-- **CORS 미지원** — 브라우저에서 다른 포트/도메인의 프론트가 직접 호출하면 차단됩니다
 - **로그인은 userId만** — 비밀번호 등 자격 증명이 없고, 토큰에 만료가 없어 `tokens.json`이 계속 쌓입니다
 - **JSON 바디 100KB 제한** — `express.json()` 기본값. 큰 레코드는 413 오류
 - **파일 응답 고정 `application/octet-stream`** — 확장자별 MIME, Range(부분 요청), ETag 미지원
@@ -123,7 +133,7 @@ src/
 ├── index.ts          # 서버 진입점 (PORT, 기본 3000)
 ├── app.ts            # DI 구성 및 라우트 연결
 ├── runtime.ts        # PERSISTENCE 모드에 따라 스토어 선택
-├── http/              # 404 및 공통 JSON 오류 처리
+├── http/              # CORS, 404 및 공통 JSON 오류 처리
 ├── system/           # 시스템 상태
 ├── db/               # 레코드 저장소
 ├── auth/             # 토큰 저장소·인증 서비스
