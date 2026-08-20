@@ -6,7 +6,7 @@
 
 - DB 컬렉션 — 컬렉션 단위 레코드 CRUD (`/collections`)
 - Auth — 토큰 기반 인증 (로그인/인증 확인/로그아웃) (`/auth`)
-- 파일 저장소 — 원시 바이너리 파일 업로드/다운로드 (`/files`)
+- 파일 저장소 — 원시 바이너리·multipart 파일 업로드/다운로드 (`/files`)
 - 시스템 상태 — 상태/업타임 확인 (`/system`)
 - 영속화 2모드 — JSON 파일 영속 또는 In-Memory
 
@@ -111,7 +111,8 @@ docker run -p 3000:3000 -e CORS_ORIGIN=http://localhost:5173 devbox-light-server
 | GET | `/auth/me` | 인증된 사용자 확인 |
 | POST | `/auth/logout` | 로그아웃 |
 | GET | `/files/:key` | 파일 다운로드 |
-| PUT | `/files/:key` | 파일 업로드 (최대 50MB) |
+| PUT | `/files/:key` | 원시 바이너리 업로드 (최대 50MB) |
+| POST | `/files/:key` | Multer multipart 업로드 (`file` 필드, 최대 50MB) |
 | DELETE | `/files/:key` | 파일 삭제 |
 
 System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다운로드는 바이너리를 반환하고, `204` 응답은 본문이 없습니다. 모든 오류 응답은 `{ "error": "..." }` 형식의 JSON입니다. 상세 응답·오류 코드·curl 예제는 [docs/api.html](docs/api.html)을 참고하세요.
@@ -121,6 +122,7 @@ System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다�
 - **로그인은 userId만** — 비밀번호 등 자격 증명이 없고, 토큰에 만료가 없어 `tokens.json`이 계속 쌓입니다
 - **JSON 바디 100KB 제한** — `express.json()` 기본값. 큰 레코드는 413 오류
 - **파일 응답 고정 `application/octet-stream`** — 확장자별 MIME, Range(부분 요청), ETag 미지원
+- **업로드 메모리 버퍼링** — 원시 바디와 Multer multipart 파일을 저장 전 메모리에 로드 (최대 50MB)
 - **단일 프로세스 가정** — 같은 디렉토리를 여러 프로세스가 쓰면 마지막 쓰기 기준
 - **손상된 파일 발견 시** — 조용히 초기화하지 않고 명시적 에러로 실패
 

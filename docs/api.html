@@ -168,24 +168,28 @@ curl localhost:3000/auth/me -H 'Authorization: Bearer &lt;accessToken&gt;'</code
 </ul>
 
 <h2 id="files">파일 저장소</h2>
-<p><code>key</code>는 저장소 루트(<code>.data/files/</code>) 기준 상대 경로입니다. 중첩 경로(<code>notes/hello.txt</code>)가 지원되며 부모 디렉토리가 자동 생성됩니다.</p>
+<p><code>key</code>는 저장소 루트(<code>.data/files/</code>) 기준 상대 경로입니다. 중첩 경로(<code>notes/hello.txt</code>)가 지원되며 부모 디렉토리가 자동 생성됩니다. multipart의 원본 파일명과 MIME 메타데이터는 저장하지 않고 URL의 <code>key</code>에 파일 바이트만 저장합니다.</p>
 <table>
   <thead><tr><th>메서드</th><th>경로</th><th>설명</th></tr></thead>
   <tbody>
     <tr><td><span class="method get">GET</span></td><td class="endpoint">/files/:key</td><td>파일 내용 반환 (<code>application/octet-stream</code>)</td></tr>
     <tr><td><span class="method put">PUT</span></td><td class="endpoint">/files/:key</td><td>원시 바디 업로드 (최대 50MB) → <code>204</code></td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="endpoint">/files/:key</td><td>Multer multipart 업로드. <code>file</code> 필드 (최대 50MB) → <code>204</code></td></tr>
     <tr><td><span class="method delete">DELETE</span></td><td class="endpoint">/files/:key</td><td>삭제 → <code>204</code></td></tr>
   </tbody>
 </table>
 
 <h3>예시</h3>
-<pre><code>curl -X PUT --data-binary @image.png -i localhost:3000/files/img/image.png
-curl localhost:3000/files/img/image.png -o downloaded.png</code></pre>
+<pre><code>curl -X PUT --data-binary @image.png -i localhost:3000/files/img/raw-image.png
+curl -X POST -F 'file=@image.png' -i localhost:3000/files/img/multipart-image.png
+curl localhost:3000/files/img/multipart-image.png -o downloaded.png</code></pre>
 
 <h3>오류</h3>
 <ul class="error-list">
   <li><code>400 invalid_key</code> — key가 비어 있음</li>
   <li><code>400 invalid_body</code> — PUT 본문이 바이너리가 아님</li>
+  <li><code>400 invalid_file</code> — POST에 <code>file</code> 필드가 없거나 다른 파일 필드를 사용</li>
+  <li><code>413 payload_too_large</code> — 업로드가 50MB를 넘음</li>
   <li><code>404 not_found</code> — <code>{ "error": "not_found", "key" }</code></li>
   <li>경로 탈출(<code>/files/../escape.txt</code> 등)은 저장소 밖을 벗어날 수 없습니다</li>
 </ul>
@@ -204,6 +208,7 @@ curl -s localhost:3000/auth/me -H 'Authorization: Bearer &lt;accessToken&gt;'
 
 # Files
 curl -s -X PUT --data-binary 'hello' -i localhost:3000/files/notes/hello.txt
+curl -s -X POST -F 'file=@image.png' -i localhost:3000/files/img/image.png
 curl -s localhost:3000/files/notes/hello.txt
 
 # 영속 확인 — 서버 재시작 후에도 유지되는지

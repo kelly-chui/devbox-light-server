@@ -11,10 +11,12 @@
     "test": "vitest"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "multer": "^2.2.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.2.0",
     "@types/node": "^25.2.1",
     "@types/supertest": "^7.2.1",
     "supertest": "^7.2.2",

@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import { MulterError } from "multer";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
@@ -162,6 +163,28 @@ describe("HTTP API contract", () => {
     });
   });
 
+  it("uploads multipart file content with Multer", async () => {
+    const content = Buffer.from([255, 128, 127, 2, 1, 0]);
+
+    await request(app)
+      .post("/files/http-contract/multipart.bin")
+      .attach("file", content, {
+        filename: "source.bin",
+        contentType: "application/custom",
+      })
+      .expect(204);
+
+    const downloaded = await request(app)
+      .get("/files/http-contract/multipart.bin")
+      .expect("Content-Type", "application/octet-stream")
+      .expect(200);
+    expect(downloaded.body).toEqual(content);
+
+    await request(app)
+      .delete("/files/http-contract/multipart.bin")
+      .expect(204);
+  });
+
   it("returns documented JSON errors for invalid requests", async () => {
     const invalidRecord = await request(app)
       .post("/collections/http-contract-invalid")
@@ -193,6 +216,30 @@ describe("HTTP API contract", () => {
 
     const unknownRoute = await request(app).get("/unknown-route").expect(404);
     expect(unknownRoute.body).toEqual({ error: "not_found" });
+
+    const missingFile = await request(app)
+      .post("/files/http-contract/missing-file.bin")
+      .field("description", "no file attached")
+      .expect(400);
+    expect(missingFile.body).toEqual({ error: "invalid_file" });
+
+    const wrongFileField = await request(app)
+      .post("/files/http-contract/wrong-field.bin")
+      .attach("attachment", Buffer.from("content"), "source.txt")
+      .expect(400);
+    expect(wrongFileField.body).toEqual({ error: "invalid_file" });
+  });
+
+  it("maps Multer size limit errors to the common payload error", async () => {
+    const failingApp = express();
+    failingApp.post("/too-large", async () => {
+      throw new MulterError("LIMIT_FILE_SIZE");
+    });
+    failingApp.use(notFoundHandler);
+    failingApp.use(jsonErrorHandler);
+
+    const response = await request(failingApp).post("/too-large").expect(413);
+    expect(response.body).toEqual({ error: "payload_too_large" });
   });
 
   it("hides details of unexpected errors", async () => {

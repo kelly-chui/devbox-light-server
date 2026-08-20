@@ -1,4 +1,5 @@
 import type { ErrorRequestHandler, RequestHandler } from "express";
+import { MulterError } from "multer";
 
 function hasErrorType(error: unknown, type: string): boolean {
   return (
@@ -31,6 +32,16 @@ export const jsonErrorHandler: ErrorRequestHandler = (
 
   if (hasErrorType(error, "entity.too.large")) {
     res.status(413).json({ error: "payload_too_large" });
+    return;
+  }
+
+  if (error instanceof MulterError) {
+    if (error.code === "LIMIT_FILE_SIZE") {
+      res.status(413).json({ error: "payload_too_large" });
+      return;
+    }
+
+    res.status(400).json({ error: "invalid_file" });
     return;
   }
 

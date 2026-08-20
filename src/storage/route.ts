@@ -1,6 +1,16 @@
 import express, { Router, type Response } from "express";
+import multer from "multer";
 import type { StorageService } from "./storageService.js";
 import { FileNotFoundError, PathTraversalError } from "./errors.js";
+
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
+const multipartUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: MAX_FILE_SIZE_BYTES,
+    files: 1,
+  },
+});
 
 function getStorageKey(path: string): string | null {
   const key = path.substring(1);
@@ -48,7 +58,7 @@ export function createStorageRouter(storageService: StorageService): Router {
 
   router.put(
     /(.*)/,
-    express.raw({ type: "*/*", limit: "50mb" }),
+    express.raw({ type: "*/*", limit: MAX_FILE_SIZE_BYTES }),
     async (req, res) => {
       const key = getStorageKey(req.path);
       if (key === null) {
@@ -61,6 +71,28 @@ export function createStorageRouter(storageService: StorageService): Router {
       }
       try {
         await storageService.putFile(key, new Uint8Array(req.body));
+        res.status(204).send();
+      } catch (error) {
+        sendStorageError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    /(.*)/,
+    multipartUpload.single("file"),
+    async (req, res) => {
+      const key = getStorageKey(req.path);
+      if (key === null) {
+        res.status(400).json({ error: "invalid_key" });
+        return;
+      }
+      if (req.file === undefined) {
+        res.status(400).json({ error: "invalid_file" });
+        return;
+      }
+      try {
+        await storageService.putFile(key, new Uint8Array(req.file.buffer));
         res.status(204).send();
       } catch (error) {
         sendStorageError(res, error);
