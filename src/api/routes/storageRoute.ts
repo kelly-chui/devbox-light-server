@@ -1,7 +1,7 @@
 import express, { Router, type Response } from "express";
 import multer from "multer";
-import type { StorageService } from "./storageService.js";
-import { FileNotFoundError, PathTraversalError } from "./errors.js";
+import type { StorageUseCases } from "../../application/storageUseCases.js";
+import { FileNotFoundError, PathTraversalError } from "../../domain/storage/errors.js";
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 const multipartUpload = multer({
@@ -38,7 +38,7 @@ function sendStorageError(res: Response, error: unknown): void {
   throw error;
 }
 
-export function createStorageRouter(storageService: StorageService): Router {
+export function createStorageRouter(storageUseCases: StorageUseCases): Router {
   const router = Router();
 
   router.get(/(.*)/, async (req, res) => {
@@ -48,7 +48,7 @@ export function createStorageRouter(storageService: StorageService): Router {
       return;
     }
     try {
-      const content = await storageService.getFile(key);
+      const content = await storageUseCases.getFile(key);
       res.setHeader("Content-Type", "application/octet-stream");
       res.send(Buffer.from(content));
     } catch (error) {
@@ -70,7 +70,7 @@ export function createStorageRouter(storageService: StorageService): Router {
         return;
       }
       try {
-        await storageService.putFile(key, new Uint8Array(req.body));
+        await storageUseCases.putFile(key, new Uint8Array(req.body));
         res.status(204).send();
       } catch (error) {
         sendStorageError(res, error);
@@ -92,7 +92,7 @@ export function createStorageRouter(storageService: StorageService): Router {
         return;
       }
       try {
-        await storageService.putFile(key, new Uint8Array(req.file.buffer));
+        await storageUseCases.putFile(key, new Uint8Array(req.file.buffer));
         res.status(204).send();
       } catch (error) {
         sendStorageError(res, error);
@@ -107,7 +107,7 @@ export function createStorageRouter(storageService: StorageService): Router {
       return;
     }
     try {
-      await storageService.deleteFile(key);
+      await storageUseCases.deleteFile(key);
       res.status(204).send();
     } catch (error) {
       sendStorageError(res, error);

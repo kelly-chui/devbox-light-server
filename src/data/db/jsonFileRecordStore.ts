@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { readJsonFile, writeJsonFile } from "../../util/jsonFile.js";
+import { readJsonFile, writeJsonFile } from "../persistence/jsonFile.js";
 import {
   InvalidCollectionNameError,
   InvalidDatabaseFileError,
   RecordNotFoundError,
-} from "../errors.js";
-import type { RecordStore } from "../recordStore.js";
-import type { RecordData, StoredRecord } from "../types.js";
+} from "../../domain/db/errors.js";
+import type { RecordStore } from "../../domain/db/recordStore.js";
+import type { RecordData, StoredRecord } from "../../domain/db/types.js";
 
 const COLLECTION_NAME_PATTERN = /^[a-zA-Z0-9._-]+$/;
 

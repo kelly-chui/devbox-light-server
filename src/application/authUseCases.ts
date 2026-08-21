@@ -1,16 +1,16 @@
 import { randomUUID } from "node:crypto";
-import type { DatabaseService } from "../db/databaseService.js";
-import { RecordNotFoundError } from "../db/errors.js";
-import type { StoredRecord } from "../db/types.js";
-import { UserNotFoundError, InvalidTokenError } from "./errors.js";
-import type { TokenStore } from "./tokenStore.js";
+import type { DatabaseUseCases } from "./databaseUseCases.js";
+import { RecordNotFoundError } from "../domain/db/errors.js";
+import type { StoredRecord } from "../domain/db/types.js";
+import { UserNotFoundError, InvalidTokenError } from "../domain/auth/errors.js";
+import type { TokenStore } from "../domain/auth/tokenStore.js";
 
-export class AuthService {
-  private readonly databaseService: DatabaseService;
+export class AuthUseCases {
+  private readonly databaseUseCases: DatabaseUseCases;
   private readonly tokenStore: TokenStore;
 
-  constructor(databaseService: DatabaseService, tokenStore: TokenStore) {
-    this.databaseService = databaseService;
+  constructor(databaseUseCases: DatabaseUseCases, tokenStore: TokenStore) {
+    this.databaseUseCases = databaseUseCases;
     this.tokenStore = tokenStore;
   }
 
@@ -18,7 +18,7 @@ export class AuthService {
     userId: string,
   ): Promise<{ accessToken: string; user: StoredRecord }> {
     try {
-      const user = await this.databaseService.getRecord("users", userId);
+      const user = await this.databaseUseCases.getRecord("users", userId);
       const accessToken = randomUUID();
       await this.tokenStore.save(accessToken, user.id);
       return { accessToken, user };
@@ -35,7 +35,7 @@ export class AuthService {
       throw new InvalidTokenError();
     }
     try {
-      return await this.databaseService.getRecord("users", userId);
+      return await this.databaseUseCases.getRecord("users", userId);
     } catch (error) {
       if (error instanceof RecordNotFoundError) {
         throw new InvalidTokenError();

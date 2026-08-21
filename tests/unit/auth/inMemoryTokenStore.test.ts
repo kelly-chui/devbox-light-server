@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { InMemoryTokenStore } from "../../../src/auth/implementations/inMemoryTokenStore.js";
+import { InMemoryTokenStore } from "../../../src/data/auth/inMemoryTokenStore.js";
 
 describe("InMemoryTokenStore", () => {
   it("saves and resolves user IDs by token", async () => {

@@ -1,4 +1,4 @@
-import type { TokenStore } from "../tokenStore.js";
+import type { TokenStore } from "../../domain/auth/tokenStore.js";
 
 export class InMemoryTokenStore implements TokenStore {
   private readonly tokens = new Map<string, string>();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readCorsOrigin } from "../../../src/http/cors.js";
+import { readCorsOrigin } from "../../../src/api/middleware/cors.js";
 
 describe("readCorsOrigin", () => {
   it("allows every origin by default", () => {

@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   jsonErrorHandler,
   notFoundHandler,
-} from "../../src/http/errorHandlers.js";
+} from "../../src/api/middleware/errorHandlers.js";
 
 let app: Express;
 const UUID_PATTERN =

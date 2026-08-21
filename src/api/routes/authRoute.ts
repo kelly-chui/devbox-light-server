@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
-import type { AuthService } from "./authService.js";
-import { UserNotFoundError, InvalidTokenError } from "./errors.js";
+import type { AuthUseCases } from "../../application/authUseCases.js";
+import { UserNotFoundError, InvalidTokenError } from "../../domain/auth/errors.js";
 
 function sendAuthError(res: Response, error: unknown): void {
   if (error instanceof UserNotFoundError) {
@@ -24,7 +24,7 @@ function extractBearerToken(authHeader: string | undefined): string | null {
   return parts[1];
 }
 
-export function createAuthRouter(authService: AuthService): Router {
+export function createAuthRouter(authUseCases: AuthUseCases): Router {
   const router = Router();
 
   router.post("/login", async (req, res) => {
@@ -36,7 +36,7 @@ export function createAuthRouter(authService: AuthService): Router {
     }
 
     try {
-      const result = await authService.login(userId);
+      const result = await authUseCases.login(userId);
       res.json(result);
     } catch (error) {
       sendAuthError(res, error);
@@ -52,7 +52,7 @@ export function createAuthRouter(authService: AuthService): Router {
     }
 
     try {
-      const user = await authService.getUserByToken(token);
+      const user = await authUseCases.getUserByToken(token);
       res.json(user);
     } catch (error) {
       if (error instanceof InvalidTokenError) {
@@ -70,10 +70,9 @@ export function createAuthRouter(authService: AuthService): Router {
       res.status(401).json({ error: "unauthorized" });
       return;
     }
-    await authService.logout(token);
+    await authUseCases.logout(token);
     res.status(204).send();
   });
 
   return router;
 }
-

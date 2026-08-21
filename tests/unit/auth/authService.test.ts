@@ -1,89 +1,88 @@
 import { describe, expect, it } from "vitest";
-import { AuthService } from "../../../src/auth/authService.js";
+import { AuthUseCases } from "../../../src/application/authUseCases.js";
 import {
   InvalidTokenError,
   UserNotFoundError,
-} from "../../../src/auth/errors.js";
-import { InMemoryTokenStore } from "../../../src/auth/implementations/inMemoryTokenStore.js";
-import { DatabaseService } from "../../../src/db/databaseService.js";
-import { InMemoryRecordStore } from "../../../src/db/implementations/inMemoryRecordStore.js";
+} from "../../../src/domain/auth/errors.js";
+import { InMemoryTokenStore } from "../../../src/data/auth/inMemoryTokenStore.js";
+import { DatabaseUseCases } from "../../../src/application/databaseUseCases.js";
+import { InMemoryRecordStore } from "../../../src/data/db/inMemoryRecordStore.js";
 
-describe("AuthService", () => {
+describe("AuthUseCases", () => {
   it("authenticates existing user and returns access token", async () => {
     const recordStore = new InMemoryRecordStore();
-    const databaseService = new DatabaseService(recordStore);
+    const databaseUseCases = new DatabaseUseCases(recordStore);
     const tokenStore = new InMemoryTokenStore();
-    const authService = new AuthService(databaseService, tokenStore);
+    const authUseCases = new AuthUseCases(databaseUseCases, tokenStore);
 
-    const userRecord = await databaseService.createRecord("users", {
+    const userRecord = await databaseUseCases.createRecord("users", {
       name: "Bob",
       email: "bob@example.com",
     });
 
-    const result = await authService.login(userRecord.id);
+    const result = await authUseCases.login(userRecord.id);
 
     expect(result.accessToken).toBeDefined();
     expect(typeof result.accessToken).toBe("string");
     expect(result.user).toEqual(userRecord);
 
-    const resolvedUser = await authService.getUserByToken(result.accessToken);
+    const resolvedUser = await authUseCases.getUserByToken(result.accessToken);
     expect(resolvedUser).toEqual(userRecord);
   });
 
   it("throws UserNotFoundError when logging in with missing user ID", async () => {
     const recordStore = new InMemoryRecordStore();
-    const databaseService = new DatabaseService(recordStore);
+    const databaseUseCases = new DatabaseUseCases(recordStore);
     const tokenStore = new InMemoryTokenStore();
-    const authService = new AuthService(databaseService, tokenStore);
+    const authUseCases = new AuthUseCases(databaseUseCases, tokenStore);
 
     await expect(
-      authService.login("non-existent-user-id"),
+      authUseCases.login("non-existent-user-id"),
     ).rejects.toBeInstanceOf(UserNotFoundError);
   });
 
   it("resolves tokens to the correct authenticated user", async () => {
     const recordStore = new InMemoryRecordStore();
-    const databaseService = new DatabaseService(recordStore);
+    const databaseUseCases = new DatabaseUseCases(recordStore);
     const tokenStore = new InMemoryTokenStore();
-    const authService = new AuthService(databaseService, tokenStore);
+    const authUseCases = new AuthUseCases(databaseUseCases, tokenStore);
 
-    const user1 = await databaseService.createRecord("users", { name: "User 1" });
-    const user2 = await databaseService.createRecord("users", { name: "User 2" });
+    const user1 = await databaseUseCases.createRecord("users", { name: "User 1" });
+    const user2 = await databaseUseCases.createRecord("users", { name: "User 2" });
 
-    const login1 = await authService.login(user1.id);
-    const login2 = await authService.login(user2.id);
+    const login1 = await authUseCases.login(user1.id);
+    const login2 = await authUseCases.login(user2.id);
 
-    expect(await authService.getUserByToken(login1.accessToken)).toEqual(user1);
-    expect(await authService.getUserByToken(login2.accessToken)).toEqual(user2);
+    expect(await authUseCases.getUserByToken(login1.accessToken)).toEqual(user1);
+    expect(await authUseCases.getUserByToken(login2.accessToken)).toEqual(user2);
   });
 
   it("throws InvalidTokenError for an invalid or unregistered token", async () => {
     const recordStore = new InMemoryRecordStore();
-    const databaseService = new DatabaseService(recordStore);
+    const databaseUseCases = new DatabaseUseCases(recordStore);
     const tokenStore = new InMemoryTokenStore();
-    const authService = new AuthService(databaseService, tokenStore);
+    const authUseCases = new AuthUseCases(databaseUseCases, tokenStore);
 
     await expect(
-      authService.getUserByToken("invalid-or-unregistered-token"),
+      authUseCases.getUserByToken("invalid-or-unregistered-token"),
     ).rejects.toBeInstanceOf(InvalidTokenError);
   });
 
   it("invalidates tokens upon logout", async () => {
     const recordStore = new InMemoryRecordStore();
-    const databaseService = new DatabaseService(recordStore);
+    const databaseUseCases = new DatabaseUseCases(recordStore);
     const tokenStore = new InMemoryTokenStore();
-    const authService = new AuthService(databaseService, tokenStore);
+    const authUseCases = new AuthUseCases(databaseUseCases, tokenStore);
 
-    const user = await databaseService.createRecord("users", { name: "Alice" });
-    const { accessToken } = await authService.login(user.id);
+    const user = await databaseUseCases.createRecord("users", { name: "Alice" });
+    const { accessToken } = await authUseCases.login(user.id);
 
-    expect(await authService.getUserByToken(accessToken)).toEqual(user);
+    expect(await authUseCases.getUserByToken(accessToken)).toEqual(user);
 
-    await authService.logout(accessToken);
+    await authUseCases.logout(accessToken);
 
-    await expect(authService.getUserByToken(accessToken)).rejects.toBeInstanceOf(
+    await expect(authUseCases.getUserByToken(accessToken)).rejects.toBeInstanceOf(
       InvalidTokenError,
     );
   });
 });
-

@@ -1,7 +1,7 @@
 import path from "node:path";
-import { readJsonFile, writeJsonFile } from "../../util/jsonFile.js";
-import { InvalidTokenFileError } from "../errors.js";
-import type { TokenStore } from "../tokenStore.js";
+import { readJsonFile, writeJsonFile } from "../persistence/jsonFile.js";
+import { InvalidTokenFileError } from "../../domain/auth/errors.js";
+import type { TokenStore } from "../../domain/auth/tokenStore.js";
 
 type TokenMap = Record<string, string>;
 

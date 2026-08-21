@@ -1,5 +1,5 @@
-import type { FileStorage } from "../fileStorage.js";
-import type { FileContent } from "../types.js";
+import type { FileStorage } from "../../domain/storage/fileStorage.js";
+import type { FileContent } from "../../domain/storage/types.js";
 
 export class InMemoryFileStorage implements FileStorage {
   private readonly files = new Map<string, FileContent>();

@@ -6,9 +6,9 @@ import {
   InvalidCollectionNameError,
   InvalidDatabaseFileError,
   RecordNotFoundError,
-} from "../../../src/db/errors.js";
-import { JsonFileRecordStore } from "../../../src/db/implementations/jsonFileRecordStore.js";
-import { JsonFileReadError } from "../../../src/util/jsonFile.js";
+} from "../../../src/domain/db/errors.js";
+import { JsonFileRecordStore } from "../../../src/data/db/jsonFileRecordStore.js";
+import { JsonFileReadError } from "../../../src/data/persistence/jsonFile.js";
 
 describe("JsonFileRecordStore", () => {
   let rootDirectory: string;

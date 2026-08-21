@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { FileStorage } from "../fileStorage.js";
-import type { FileContent } from "../types.js";
-import { PathTraversalError } from "../errors.js";
+import type { FileStorage } from "../../domain/storage/fileStorage.js";
+import type { FileContent } from "../../domain/storage/types.js";
+import { PathTraversalError } from "../../domain/storage/errors.js";
 
 export class LocalFileStorage implements FileStorage {
   private readonly rootDirectory: string;

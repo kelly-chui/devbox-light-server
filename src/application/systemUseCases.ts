@@ -1,19 +1,19 @@
-import type { SystemStatus, SystemUptime } from "./types.js";
-import { SystemRepository } from "./system.js";
+import type { SystemStatus, SystemUptime } from "../domain/system/types.js";
+import { SystemRepository } from "../domain/system/system.js";
 
-export type { SystemStatus, SystemUptime } from "./types.js";
+export type { SystemStatus, SystemUptime } from "../domain/system/types.js";
 
-export type SystemServiceOptions = {
+export type SystemUseCasesOptions = {
   startedAt?: number;
 };
 
-export class SystemService {
+export class SystemUseCases {
   private readonly systemRepository: SystemRepository;
 
   constructor(systemRepository: SystemRepository);
-  constructor(options: SystemServiceOptions);
+  constructor(options: SystemUseCasesOptions);
   constructor(
-    optionsOrRepository: SystemServiceOptions | SystemRepository = {},
+    optionsOrRepository: SystemUseCasesOptions | SystemRepository = {},
   ) {
     this.systemRepository =
       optionsOrRepository instanceof SystemRepository
@@ -33,3 +33,5 @@ export class SystemService {
     return { uptimeSeconds: Math.floor(uptimeMs / 1000) };
   }
 }
+
+export { SystemUseCases as SystemService };

@@ -1,8 +1,8 @@
-import { RecordNotFoundError } from "./errors.js";
-import type { RecordStore } from "./recordStore.js";
-import type { RecordData, StoredRecord } from "./types.js";
+import { RecordNotFoundError } from "../domain/db/errors.js";
+import type { RecordStore } from "../domain/db/recordStore.js";
+import type { RecordData, StoredRecord } from "../domain/db/types.js";
 
-export class DatabaseService {
+export class DatabaseUseCases {
   private readonly recordStore: RecordStore;
 
   constructor(recordStore: RecordStore) {

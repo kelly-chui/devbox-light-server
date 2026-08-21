@@ -1,16 +1,16 @@
 import express from "express";
-import { createSystemRouter } from "./system/route.js";
-import { createCollectionsRouter } from "./db/route.js";
-import { SystemService } from "./system/systemService.js";
-import { SystemRepository } from "./system/system.js";
-import { DatabaseService } from "./db/databaseService.js";
-import { StorageService } from "./storage/storageService.js";
-import { createStorageRouter } from "./storage/route.js";
-import { AuthService } from "./auth/authService.js";
-import { createAuthRouter } from "./auth/route.js";
-import { createRuntimeStores, readPersistenceMode } from "./runtime.js";
-import { jsonErrorHandler, notFoundHandler } from "./http/errorHandlers.js";
-import { createCorsMiddleware, readCorsOrigin } from "./http/cors.js";
+import { createSystemRouter } from "./api/routes/systemRoute.js";
+import { createCollectionsRouter } from "./api/routes/dbRoute.js";
+import { SystemUseCases } from "./application/systemUseCases.js";
+import { SystemRepository } from "./domain/system/system.js";
+import { DatabaseUseCases } from "./application/databaseUseCases.js";
+import { StorageUseCases } from "./application/storageUseCases.js";
+import { createStorageRouter } from "./api/routes/storageRoute.js";
+import { AuthUseCases } from "./application/authUseCases.js";
+import { createAuthRouter } from "./api/routes/authRoute.js";
+import { createRuntimeStores, readPersistenceMode } from "./config/runtime.js";
+import { jsonErrorHandler, notFoundHandler } from "./api/middleware/errorHandlers.js";
+import { createCorsMiddleware, readCorsOrigin } from "./api/middleware/cors.js";
 
 const app = express();
 
@@ -18,8 +18,8 @@ app.use(createCorsMiddleware(readCorsOrigin(process.env.CORS_ORIGIN)));
 app.use(express.json());
 
 const systemRepository = new SystemRepository();
-const systemService = new SystemService(systemRepository);
-app.use("/system", createSystemRouter(systemService));
+const systemUseCases = new SystemUseCases(systemRepository);
+app.use("/system", createSystemRouter(systemUseCases));
 
 const persistenceMode = readPersistenceMode(process.env.PERSISTENCE);
 const dataDirectory = process.env.DB_DATA_DIR ?? ".data";
@@ -28,14 +28,14 @@ const { recordStore, tokenStore, fileStorage } = createRuntimeStores(
   dataDirectory,
 );
 
-const databaseService = new DatabaseService(recordStore);
-app.use("/collections", createCollectionsRouter(databaseService));
+const databaseUseCases = new DatabaseUseCases(recordStore);
+app.use("/collections", createCollectionsRouter(databaseUseCases));
 
-const authService = new AuthService(databaseService, tokenStore);
-app.use("/auth", createAuthRouter(authService));
+const authUseCases = new AuthUseCases(databaseUseCases, tokenStore);
+app.use("/auth", createAuthRouter(authUseCases));
 
-const storageService = new StorageService(fileStorage);
-app.use("/files", createStorageRouter(storageService));
+const storageUseCases = new StorageUseCases(fileStorage);
+app.use("/files", createStorageRouter(storageUseCases));
 
 app.use(notFoundHandler);
 app.use(jsonErrorHandler);

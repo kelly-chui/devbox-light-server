@@ -1,10 +1,10 @@
 import { Router, type Response } from "express";
-import type { DatabaseService } from "./databaseService.js";
-import type { RecordData } from "./types.js";
+import type { DatabaseUseCases } from "../../application/databaseUseCases.js";
+import type { RecordData } from "../../domain/db/types.js";
 import {
   InvalidCollectionNameError,
   RecordNotFoundError,
-} from "./errors.js";
+} from "../../domain/db/errors.js";
 
 function isRecordData(value: unknown): value is RecordData {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -50,7 +50,7 @@ function sendDatabaseError(res: Response, error: unknown): void {
   throw error;
 }
 
-export function createCollectionsRouter(databaseService: DatabaseService): Router {
+export function createCollectionsRouter(databaseUseCases: DatabaseUseCases): Router {
   const router = Router();
 
   router.get("/:collection", async (req, res) => {
@@ -60,7 +60,7 @@ export function createCollectionsRouter(databaseService: DatabaseService): Route
       return;
     }
     try {
-      const records = await databaseService.listRecords(collection);
+      const records = await databaseUseCases.listRecords(collection);
       res.json({ collection, records });
     } catch (error) {
       sendDatabaseError(res, error);
@@ -74,7 +74,7 @@ export function createCollectionsRouter(databaseService: DatabaseService): Route
       return;
     }
     try {
-      const record = await databaseService.getRecord(
+      const record = await databaseUseCases.getRecord(
         params.collection,
         params.id,
       );
@@ -95,7 +95,7 @@ export function createCollectionsRouter(databaseService: DatabaseService): Route
       return;
     }
     try {
-      const record = await databaseService.createRecord(collection, req.body);
+      const record = await databaseUseCases.createRecord(collection, req.body);
       res.status(201).json(record);
     } catch (error) {
       sendDatabaseError(res, error);
@@ -113,7 +113,7 @@ export function createCollectionsRouter(databaseService: DatabaseService): Route
       return;
     }
     try {
-      const record = await databaseService.replaceRecord(
+      const record = await databaseUseCases.replaceRecord(
         params.collection,
         params.id,
         req.body,
@@ -131,7 +131,7 @@ export function createCollectionsRouter(databaseService: DatabaseService): Route
       return;
     }
     try {
-      await databaseService.deleteRecord(params.collection, params.id);
+      await databaseUseCases.deleteRecord(params.collection, params.id);
       res.status(204).send();
     } catch (error) {
       sendDatabaseError(res, error);
