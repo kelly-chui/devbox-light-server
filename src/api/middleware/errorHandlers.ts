@@ -1,5 +1,4 @@
 import type { ErrorRequestHandler, RequestHandler } from "express";
-import { MulterError } from "multer";
 
 function hasErrorType(error: unknown, type: string): boolean {
   return (
@@ -11,10 +10,10 @@ function hasErrorType(error: unknown, type: string): boolean {
 }
 
 export const notFoundHandler: RequestHandler = (_req, res) => {
-  res.status(404).json({ error: "not_found" });
+  res.status(404).json({ error: "route_not_found" });
 };
 
-export const jsonErrorHandler: ErrorRequestHandler = (
+export const httpErrorHandler: ErrorRequestHandler = (
   error,
   _req,
   res,
@@ -32,16 +31,6 @@ export const jsonErrorHandler: ErrorRequestHandler = (
 
   if (hasErrorType(error, "entity.too.large")) {
     res.status(413).json({ error: "payload_too_large" });
-    return;
-  }
-
-  if (error instanceof MulterError) {
-    if (error.code === "LIMIT_FILE_SIZE") {
-      res.status(413).json({ error: "payload_too_large" });
-      return;
-    }
-
-    res.status(400).json({ error: "invalid_file" });
     return;
   }
 

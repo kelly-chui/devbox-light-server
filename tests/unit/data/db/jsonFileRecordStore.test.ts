@@ -2,13 +2,9 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  InvalidCollectionNameError,
-  InvalidDatabaseFileError,
-  RecordNotFoundError,
-} from "../../../src/domain/db/errors.js";
-import { JsonFileRecordStore } from "../../../src/data/db/jsonFileRecordStore.js";
-import { JsonFileReadError } from "../../../src/data/persistence/jsonFile.js";
+import { InvalidCollectionNameError, RecordStoreReadError } from "../../../../src/domain/db/recordStore.js";
+import { RecordNotFoundError } from "../../../../src/domain/db/recordStore.js";
+import { JsonFileRecordStore } from "../../../../src/data/db/jsonFileRecordStore.js";
 
 describe("JsonFileRecordStore", () => {
   let rootDirectory: string;
@@ -189,7 +185,7 @@ describe("JsonFileRecordStore", () => {
     const reloaded = new JsonFileRecordStore(rootDirectory);
 
     await expect(reloaded.list("users")).rejects.toBeInstanceOf(
-      JsonFileReadError,
+      RecordStoreReadError,
     );
   });
 
@@ -202,7 +198,7 @@ describe("JsonFileRecordStore", () => {
     const reloaded = new JsonFileRecordStore(rootDirectory);
 
     await expect(reloaded.list("users")).rejects.toBeInstanceOf(
-      InvalidDatabaseFileError,
+      RecordStoreReadError,
     );
   });
 

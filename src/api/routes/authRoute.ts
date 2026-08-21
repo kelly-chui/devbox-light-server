@@ -1,6 +1,10 @@
 import { Router, type Response } from "express";
 import type { AuthUseCases } from "../../application/authUseCases.js";
-import { UserNotFoundError, InvalidTokenError } from "../../domain/auth/errors.js";
+import {
+  AuthStorageError,
+  InvalidTokenError,
+  UserNotFoundError,
+} from "../../application/authErrors.js";
 
 function sendAuthError(res: Response, error: unknown): void {
   if (error instanceof UserNotFoundError) {
@@ -8,6 +12,14 @@ function sendAuthError(res: Response, error: unknown): void {
       error: "user_not_found",
       userId: error.userId,
     });
+    return;
+  }
+  if (error instanceof InvalidTokenError) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  if (error instanceof AuthStorageError) {
+    res.status(500).json({ error: "internal_server_error" });
     return;
   }
   throw error;
@@ -55,12 +67,7 @@ export function createAuthRouter(authUseCases: AuthUseCases): Router {
       const user = await authUseCases.getUserByToken(token);
       res.json(user);
     } catch (error) {
-      if (error instanceof InvalidTokenError) {
-        res.status(401).json({ error: "unauthorized" });
-        return;
-      }
-
-      throw error;
+      sendAuthError(res, error);
     }
   });
 
@@ -70,8 +77,12 @@ export function createAuthRouter(authUseCases: AuthUseCases): Router {
       res.status(401).json({ error: "unauthorized" });
       return;
     }
-    await authUseCases.logout(token);
-    res.status(204).send();
+    try {
+      await authUseCases.logout(token);
+      res.status(204).send();
+    } catch (error) {
+      sendAuthError(res, error);
+    }
   });
 
   return router;

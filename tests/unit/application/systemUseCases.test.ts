@@ -13,7 +13,7 @@ describe("SystemUseCases", () => {
 
   describe("getStatus", () => {
     it("returns ok status with an ISO timestamp", () => {
-    const useCases = new SystemUseCases();
+      const useCases = new SystemUseCases();
       const status = useCases.getStatus();
 
       expect(status.status).toBe("ok");

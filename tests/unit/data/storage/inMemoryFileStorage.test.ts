@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { InMemoryFileStorage } from "../../../src/data/storage/inMemoryFileStorage.js";
+import { InMemoryFileStorage } from "../../../../src/data/storage/inMemoryFileStorage.js";
 
 describe("InMemoryFileStorage", () => {
   it("stores and retrieves file content", async () => {

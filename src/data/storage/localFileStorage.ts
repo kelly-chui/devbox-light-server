@@ -1,8 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { FileStorage } from "../../domain/storage/fileStorage.js";
+import {
+  FileStorageReadError,
+  FileStorageWriteError,
+  type FileStorage,
+} from "../../domain/storage/fileStorage.js";
 import type { FileContent } from "../../domain/storage/types.js";
-import { PathTraversalError } from "../../domain/storage/errors.js";
+import { PathTraversalError } from "../../domain/storage/fileStorage.js";
 
 export class LocalFileStorage implements FileStorage {
   private readonly rootDirectory: string;
@@ -36,14 +40,18 @@ export class LocalFileStorage implements FileStorage {
       if (isNodeError(error) && error.code === "ENOENT") {
         return undefined;
       }
-      throw error;
+      throw new FileStorageReadError({ cause: error });
     }
   }
 
   async put(key: string, content: FileContent): Promise<void> {
     const filePath = this.resolveFilePath(key);
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, content);
+    try {
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.writeFile(filePath, content);
+    } catch (error) {
+      throw new FileStorageWriteError({ cause: error });
+    }
   }
 
   async delete(key: string): Promise<boolean> {
@@ -56,7 +64,7 @@ export class LocalFileStorage implements FileStorage {
       if (isNodeError(error) && error.code === "ENOENT") {
         return false;
       }
-      throw error;
+      throw new FileStorageWriteError({ cause: error });
     }
   }
 }

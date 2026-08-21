@@ -1,6 +1,5 @@
-import type { RecordStore } from "../../domain/db/recordStore.js";
+import { RecordNotFoundError, type RecordStore } from "../../domain/db/recordStore.js";
 import type { RecordData, StoredRecord } from "../../domain/db/types.js";
-import { RecordNotFoundError } from "../../domain/db/errors.js";
 
 type CollectionStore = {
   nextId: number;

@@ -9,7 +9,7 @@ import { createStorageRouter } from "./api/routes/storageRoute.js";
 import { AuthUseCases } from "./application/authUseCases.js";
 import { createAuthRouter } from "./api/routes/authRoute.js";
 import { createRuntimeStores, readPersistenceMode } from "./config/runtime.js";
-import { jsonErrorHandler, notFoundHandler } from "./api/middleware/errorHandlers.js";
+import { httpErrorHandler, notFoundHandler } from "./api/middleware/errorHandlers.js";
 import { createCorsMiddleware, readCorsOrigin } from "./api/middleware/cors.js";
 
 const app = express();
@@ -38,6 +38,6 @@ const storageUseCases = new StorageUseCases(fileStorage);
 app.use("/files", createStorageRouter(storageUseCases));
 
 app.use(notFoundHandler);
-app.use(jsonErrorHandler);
+app.use(httpErrorHandler);
 
 export default app;

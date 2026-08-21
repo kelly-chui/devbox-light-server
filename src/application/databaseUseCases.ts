@@ -1,5 +1,16 @@
-import { RecordNotFoundError } from "../domain/db/errors.js";
-import type { RecordStore } from "../domain/db/recordStore.js";
+import {
+  InvalidCollectionNameError,
+  RecordNotFoundError,
+  RecordStoreReadError,
+  RecordStoreWriteError,
+  type RecordStore,
+} from "../domain/db/recordStore.js";
+import {
+  DatabaseInvalidCollectionError,
+  DatabaseReadError,
+  DatabaseRecordNotFoundError,
+  DatabaseWriteError,
+} from "./databaseErrors.js";
 import type { RecordData, StoredRecord } from "../domain/db/types.js";
 
 export class DatabaseUseCases {
@@ -10,13 +21,16 @@ export class DatabaseUseCases {
   }
 
   async listRecords(collection: string): Promise<StoredRecord[]> {
-    return this.recordStore.list(collection);
+    try { return await this.recordStore.list(collection); }
+    catch (error) { throw this.mapError(error); }
   }
 
   async getRecord(collection: string, id: string): Promise<StoredRecord> {
-    const record = await this.recordStore.get(collection, id);
+    let record: StoredRecord | undefined;
+    try { record = await this.recordStore.get(collection, id); }
+    catch (error) { throw this.mapError(error); }
     if (record === undefined) {
-      throw new RecordNotFoundError(collection, id);
+      throw new DatabaseRecordNotFoundError(collection, id);
     }
     return record;
   }
@@ -25,7 +39,8 @@ export class DatabaseUseCases {
     collection: string,
     data: RecordData,
   ): Promise<StoredRecord> {
-    return this.recordStore.create(collection, data);
+    try { return await this.recordStore.create(collection, data); }
+    catch (error) { throw this.mapError(error); }
   }
 
   async replaceRecord(
@@ -33,14 +48,33 @@ export class DatabaseUseCases {
     id: string,
     data: RecordData,
   ): Promise<StoredRecord> {
-    await this.recordStore.replace(collection, id, data);
+    try { await this.recordStore.replace(collection, id, data); }
+    catch (error) { throw this.mapError(error); }
     return this.getRecord(collection, id);
   }
 
   async deleteRecord(collection: string, id: string): Promise<void> {
-    const deleted = await this.recordStore.delete(collection, id);
+    let deleted: boolean;
+    try { deleted = await this.recordStore.delete(collection, id); }
+    catch (error) { throw this.mapError(error); }
     if (!deleted) {
-      throw new RecordNotFoundError(collection, id);
+      throw new DatabaseRecordNotFoundError(collection, id);
     }
+  }
+
+  private mapError(error: unknown): Error {
+    if (error instanceof InvalidCollectionNameError) {
+      return new DatabaseInvalidCollectionError(error.collection);
+    }
+    if (error instanceof RecordNotFoundError) {
+      return new DatabaseRecordNotFoundError(error.collection, error.id);
+    }
+    if (error instanceof RecordStoreWriteError) {
+      return new DatabaseWriteError({ cause: error });
+    }
+    if (error instanceof RecordStoreReadError) {
+      return new DatabaseReadError({ cause: error });
+    }
+    throw error;
   }
 }

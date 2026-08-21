@@ -13,3 +13,10 @@ export class PathTraversalError extends Error {
     super(`Path traversal detected: ${key}`);
   }
 }
+
+export class StorageError extends Error {
+  constructor(options?: { cause?: unknown }) {
+    super("Storage operation failed.", options);
+    this.name = "StorageError";
+  }
+}

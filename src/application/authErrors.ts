@@ -15,12 +15,9 @@ export class InvalidTokenError extends Error {
   }
 }
 
-export class InvalidTokenFileError extends Error {
-  readonly filePath: string;
-
-  constructor(filePath: string) {
-    super(`Invalid token file: ${filePath}`);
-    this.name = "InvalidTokenFileError";
-    this.filePath = filePath;
+export class AuthStorageError extends Error {
+  constructor(options?: { cause?: unknown }) {
+    super("Authentication storage failed.", options);
+    this.name = "AuthStorageError";
   }
 }

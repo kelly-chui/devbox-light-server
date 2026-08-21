@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { JsonFileRecordStore } from "../../src/data/db/jsonFileRecordStore.js";
-import { InMemoryRecordStore } from "../../src/data/db/inMemoryRecordStore.js";
-import { JsonFileTokenStore } from "../../src/data/auth/jsonFileTokenStore.js";
-import { InMemoryTokenStore } from "../../src/data/auth/inMemoryTokenStore.js";
-import { LocalFileStorage } from "../../src/data/storage/localFileStorage.js";
-import { InMemoryFileStorage } from "../../src/data/storage/inMemoryFileStorage.js";
+import { JsonFileRecordStore } from "../../../src/data/db/jsonFileRecordStore.js";
+import { InMemoryRecordStore } from "../../../src/data/db/inMemoryRecordStore.js";
+import { JsonFileTokenStore } from "../../../src/data/auth/jsonFileTokenStore.js";
+import { InMemoryTokenStore } from "../../../src/data/auth/inMemoryTokenStore.js";
+import { LocalFileStorage } from "../../../src/data/storage/localFileStorage.js";
+import { InMemoryFileStorage } from "../../../src/data/storage/inMemoryFileStorage.js";
 import {
   createRuntimeStores,
   readPersistenceMode,
-} from "../../src/config/runtime.js";
+} from "../../../src/config/runtime.js";
 
 describe("readPersistenceMode", () => {
   it("defaults to json when unset or empty", () => {

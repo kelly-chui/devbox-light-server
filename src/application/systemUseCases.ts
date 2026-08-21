@@ -10,6 +10,7 @@ export type SystemUseCasesOptions = {
 export class SystemUseCases {
   private readonly systemRepository: SystemRepository;
 
+  constructor();
   constructor(systemRepository: SystemRepository);
   constructor(options: SystemUseCasesOptions);
   constructor(

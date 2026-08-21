@@ -3,10 +3,11 @@ import path from "node:path";
 import { readJsonFile, writeJsonFile } from "../persistence/jsonFile.js";
 import {
   InvalidCollectionNameError,
-  InvalidDatabaseFileError,
   RecordNotFoundError,
-} from "../../domain/db/errors.js";
-import type { RecordStore } from "../../domain/db/recordStore.js";
+  RecordStoreReadError,
+  RecordStoreWriteError,
+  type RecordStore,
+} from "../../domain/db/recordStore.js";
 import type { RecordData, StoredRecord } from "../../domain/db/types.js";
 
 const COLLECTION_NAME_PATTERN = /^[a-zA-Z0-9._-]+$/;
@@ -47,14 +48,32 @@ export class JsonFileRecordStore implements RecordStore {
   private async readCollection(collection: string): Promise<PersistedCollection> {
     this.validateCollection(collection);
     const filePath = this.collectionFilePath(collection);
-    const persisted = await readJsonFile(filePath);
+    let persisted: unknown | undefined;
+    try {
+      persisted = await readJsonFile(filePath);
+    } catch (error) {
+      throw new RecordStoreReadError({ cause: error });
+    }
     if (persisted !== undefined) {
       if (!isPersistedCollection(persisted)) {
-        throw new InvalidDatabaseFileError(filePath);
+        throw new RecordStoreReadError({
+          cause: new Error(`Invalid database file: ${filePath}`),
+        });
       }
       return persisted;
     }
     return { records: {} };
+  }
+
+  private async writeCollection(
+    collection: string,
+    value: PersistedCollection,
+  ): Promise<void> {
+    try {
+      await writeJsonFile(this.collectionFilePath(collection), value);
+    } catch (error) {
+      throw new RecordStoreWriteError({ cause: error });
+    }
   }
 
   async list(collection: string): Promise<StoredRecord[]> {
@@ -80,7 +99,7 @@ export class JsonFileRecordStore implements RecordStore {
     const next = {
       records: { ...store.records, [id]: structuredClone(data) },
     };
-    await writeJsonFile(this.collectionFilePath(collection), next);
+    await this.writeCollection(collection, next);
     return { id, data: structuredClone(data) };
   }
 
@@ -93,7 +112,7 @@ export class JsonFileRecordStore implements RecordStore {
     if (!(id in store.records)) {
       throw new RecordNotFoundError(collection, id);
     }
-    await writeJsonFile(this.collectionFilePath(collection), {
+    await this.writeCollection(collection, {
       records: { ...store.records, [id]: structuredClone(data) },
     });
   }
@@ -104,7 +123,7 @@ export class JsonFileRecordStore implements RecordStore {
     if (deleted) {
       const records = { ...store.records };
       delete records[id];
-      await writeJsonFile(this.collectionFilePath(collection), {
+      await this.writeCollection(collection, {
         records,
       });
     }

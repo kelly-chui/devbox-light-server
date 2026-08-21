@@ -1,9 +1,13 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseUseCases } from "./databaseUseCases.js";
-import { RecordNotFoundError } from "../domain/db/errors.js";
+import { DatabaseRecordNotFoundError } from "./databaseErrors.js";
 import type { StoredRecord } from "../domain/db/types.js";
-import { UserNotFoundError, InvalidTokenError } from "../domain/auth/errors.js";
-import type { TokenStore } from "../domain/auth/tokenStore.js";
+import { UserNotFoundError, InvalidTokenError, AuthStorageError } from "./authErrors.js";
+import {
+  TokenStoreReadError,
+  TokenStoreWriteError,
+  type TokenStore,
+} from "../domain/auth/tokenStore.js";
 
 export class AuthUseCases {
   private readonly databaseUseCases: DatabaseUseCases;
@@ -20,24 +24,33 @@ export class AuthUseCases {
     try {
       const user = await this.databaseUseCases.getRecord("users", userId);
       const accessToken = randomUUID();
-      await this.tokenStore.save(accessToken, user.id);
+      try {
+        await this.tokenStore.save(accessToken, user.id);
+      } catch (error) {
+        throw this.mapTokenStoreError(error);
+      }
       return { accessToken, user };
     } catch (error) {
-      if (error instanceof RecordNotFoundError) {
+      if (error instanceof DatabaseRecordNotFoundError) {
         throw new UserNotFoundError(userId);
       }
       throw error;
     }
   }
   async getUserByToken(token: string): Promise<StoredRecord> {
-    const userId = await this.tokenStore.getUserId(token);
+    let userId: string | undefined;
+    try {
+      userId = await this.tokenStore.getUserId(token);
+    } catch (error) {
+      throw this.mapTokenStoreError(error);
+    }
     if (!userId) {
       throw new InvalidTokenError();
     }
     try {
       return await this.databaseUseCases.getRecord("users", userId);
     } catch (error) {
-      if (error instanceof RecordNotFoundError) {
+      if (error instanceof DatabaseRecordNotFoundError) {
         throw new InvalidTokenError();
       }
       throw error;
@@ -45,6 +58,20 @@ export class AuthUseCases {
   }
 
   async logout(token: string): Promise<void> {
-    await this.tokenStore.remove(token);
+    try {
+      await this.tokenStore.remove(token);
+    } catch (error) {
+      throw this.mapTokenStoreError(error);
+    }
+  }
+
+  private mapTokenStoreError(error: unknown): Error {
+    if (
+      error instanceof TokenStoreReadError ||
+      error instanceof TokenStoreWriteError
+    ) {
+      return new AuthStorageError({ cause: error });
+    }
+    throw error;
   }
 }

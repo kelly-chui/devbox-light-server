@@ -1,9 +1,8 @@
 import express, { type Express } from "express";
-import { MulterError } from "multer";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
-  jsonErrorHandler,
+  httpErrorHandler,
   notFoundHandler,
 } from "../../src/api/middleware/errorHandlers.js";
 
@@ -215,7 +214,7 @@ describe("HTTP API contract", () => {
     expect(oversizedJson.body).toEqual({ error: "payload_too_large" });
 
     const unknownRoute = await request(app).get("/unknown-route").expect(404);
-    expect(unknownRoute.body).toEqual({ error: "not_found" });
+    expect(unknownRoute.body).toEqual({ error: "route_not_found" });
 
     const missingFile = await request(app)
       .post("/files/http-contract/missing-file.bin")
@@ -230,25 +229,13 @@ describe("HTTP API contract", () => {
     expect(wrongFileField.body).toEqual({ error: "invalid_file" });
   });
 
-  it("maps Multer size limit errors to the common payload error", async () => {
-    const failingApp = express();
-    failingApp.post("/too-large", async () => {
-      throw new MulterError("LIMIT_FILE_SIZE");
-    });
-    failingApp.use(notFoundHandler);
-    failingApp.use(jsonErrorHandler);
-
-    const response = await request(failingApp).post("/too-large").expect(413);
-    expect(response.body).toEqual({ error: "payload_too_large" });
-  });
-
   it("hides details of unexpected errors", async () => {
     const failingApp = express();
     failingApp.get("/boom", async () => {
       throw new Error("sensitive detail");
     });
     failingApp.use(notFoundHandler);
-    failingApp.use(jsonErrorHandler);
+    failingApp.use(httpErrorHandler);
 
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
 

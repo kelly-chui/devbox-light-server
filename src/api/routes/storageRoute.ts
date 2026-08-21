@@ -1,7 +1,12 @@
-import express, { Router, type Response } from "express";
+import express, { Router, type ErrorRequestHandler, type Response } from "express";
 import multer from "multer";
+import { MulterError } from "multer";
 import type { StorageUseCases } from "../../application/storageUseCases.js";
-import { FileNotFoundError, PathTraversalError } from "../../domain/storage/errors.js";
+import {
+  FileNotFoundError,
+  PathTraversalError,
+  StorageError,
+} from "../../application/storageErrors.js";
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 const multipartUpload = multer({
@@ -11,6 +16,43 @@ const multipartUpload = multer({
     files: 1,
   },
 });
+
+const storageUploadErrorHandler: ErrorRequestHandler = (
+  error,
+  _req,
+  res,
+  next,
+) => {
+  if (res.headersSent) {
+    next(error);
+    return;
+  }
+
+  if (
+    error instanceof MulterError &&
+    error.code === "LIMIT_FILE_SIZE"
+  ) {
+    res.status(413).json({ error: "payload_too_large" });
+    return;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "type" in error &&
+    error.type === "entity.too.large"
+  ) {
+    res.status(413).json({ error: "payload_too_large" });
+    return;
+  }
+
+  if (error instanceof MulterError) {
+    res.status(400).json({ error: "invalid_file" });
+    return;
+  }
+
+  next(error);
+};
 
 function getStorageKey(path: string): string | null {
   const key = path.substring(1);
@@ -33,6 +75,10 @@ function sendStorageError(res: Response, error: unknown): void {
       error: "path_traversal",
       key: error.key,
     });
+    return;
+  }
+  if (error instanceof StorageError) {
+    res.status(500).json({ error: "internal_server_error" });
     return;
   }
   throw error;
@@ -113,6 +159,8 @@ export function createStorageRouter(storageUseCases: StorageUseCases): Router {
       sendStorageError(res, error);
     }
   });
+
+  router.use(storageUploadErrorHandler);
 
   return router;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { InMemoryRecordStore } from "../../../src/data/db/inMemoryRecordStore.js";
-import { RecordNotFoundError } from "../../../src/domain/db/errors.js";
+import { InMemoryRecordStore } from "../../../../src/data/db/inMemoryRecordStore.js";
+import { RecordNotFoundError } from "../../../../src/domain/db/recordStore.js";
 
 async function createUser(
   store: InMemoryRecordStore,

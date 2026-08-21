@@ -3,7 +3,7 @@ import { AuthUseCases } from "../../../src/application/authUseCases.js";
 import {
   InvalidTokenError,
   UserNotFoundError,
-} from "../../../src/domain/auth/errors.js";
+} from "../../../src/application/authErrors.js";
 import { InMemoryTokenStore } from "../../../src/data/auth/inMemoryTokenStore.js";
 import { DatabaseUseCases } from "../../../src/application/databaseUseCases.js";
 import { InMemoryRecordStore } from "../../../src/data/db/inMemoryRecordStore.js";

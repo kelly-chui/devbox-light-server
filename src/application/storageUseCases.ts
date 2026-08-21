@@ -1,5 +1,10 @@
-import { FileNotFoundError } from "../domain/storage/errors.js";
-import type { FileStorage } from "../domain/storage/fileStorage.js";
+import { FileNotFoundError, PathTraversalError, StorageError } from "./storageErrors.js";
+import {
+  FileStorageReadError,
+  FileStorageWriteError,
+  PathTraversalError as ContractPathTraversalError,
+  type FileStorage,
+} from "../domain/storage/fileStorage.js";
 import type { FileContent } from "../domain/storage/types.js";
 
 export class StorageUseCases {
@@ -10,7 +15,9 @@ export class StorageUseCases {
   }
 
   async getFile(key: string): Promise<FileContent> {
-    const content = await this.fileStorage.get(key);
+    let content: FileContent | undefined;
+    try { content = await this.fileStorage.get(key); }
+    catch (error) { throw this.mapError(error); }
     if (content === undefined) {
       throw new FileNotFoundError(key);
     }
@@ -18,13 +25,26 @@ export class StorageUseCases {
   }
 
   async putFile(key: string, content: FileContent): Promise<void> {
-    await this.fileStorage.put(key, content);
+    try { await this.fileStorage.put(key, content); }
+    catch (error) { throw this.mapError(error); }
   }
 
   async deleteFile(key: string): Promise<void> {
-    const deleted = await this.fileStorage.delete(key);
+    let deleted: boolean;
+    try { deleted = await this.fileStorage.delete(key); }
+    catch (error) { throw this.mapError(error); }
     if (!deleted) {
       throw new FileNotFoundError(key);
     }
+  }
+
+  private mapError(error: unknown): Error {
+    if (error instanceof ContractPathTraversalError) {
+      return new PathTraversalError(error.key);
+    }
+    if (error instanceof FileStorageReadError || error instanceof FileStorageWriteError) {
+      return new StorageError({ cause: error });
+    }
+    throw error;
   }
 }
