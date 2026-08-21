@@ -1,34 +1,15 @@
-export type SystemStatus = {
-  status: "ok";
-  timestamp: string;
-};
-
-export type SystemUptime = {
-  uptimeSeconds: number;
-};
-
-export type SystemServiceOptions = {
+export type SystemRepositoryOptions = {
   startedAt?: number;
 };
 
-export class SystemService {
+export class SystemRepository {
   private readonly startedAt: number;
 
-  constructor(options: SystemServiceOptions = {}) {
+  constructor(options: SystemRepositoryOptions = {}) {
     this.startedAt = options.startedAt ?? Date.now();
   }
 
-  getStatus(): SystemStatus {
-    return {
-      status: "ok",
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  getUptime(): SystemUptime {
-    const uptimeMs = Date.now() - this.startedAt;
-    return {
-      uptimeSeconds: Math.floor(uptimeMs / 1000),
-    };
+  getStartedAt(): number {
+    return this.startedAt;
   }
 }

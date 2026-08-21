@@ -1,7 +1,8 @@
 import express from "express";
 import { createSystemRouter } from "./system/route.js";
 import { createCollectionsRouter } from "./db/route.js";
-import { SystemService } from "./system/system.js";
+import { SystemService } from "./system/systemService.js";
+import { SystemRepository } from "./system/system.js";
 import { DatabaseService } from "./db/databaseService.js";
 import { StorageService } from "./storage/storageService.js";
 import { createStorageRouter } from "./storage/route.js";
@@ -16,7 +17,8 @@ const app = express();
 app.use(createCorsMiddleware(readCorsOrigin(process.env.CORS_ORIGIN)));
 app.use(express.json());
 
-const systemService = new SystemService();
+const systemRepository = new SystemRepository();
+const systemService = new SystemService(systemRepository);
 app.use("/system", createSystemRouter(systemService));
 
 const persistenceMode = readPersistenceMode(process.env.PERSISTENCE);
