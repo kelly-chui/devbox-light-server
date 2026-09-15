@@ -1,7 +1,9 @@
 import express, { Router, type ErrorRequestHandler, type Response } from "express";
 import multer from "multer";
 import { MulterError } from "multer";
-import type { StorageUseCases } from "../../application/storageUseCases.js";
+import type { DeleteFileUseCase } from "../../application/storage/deleteFileUseCase.js";
+import type { GetFileUseCase } from "../../application/storage/getFileUseCase.js";
+import type { PutFileUseCase } from "../../application/storage/putFileUseCase.js";
 import {
   FileNotFoundError,
   PathTraversalError,
@@ -84,7 +86,17 @@ function sendStorageError(res: Response, error: unknown): void {
   throw error;
 }
 
-export function createStorageRouter(storageUseCases: StorageUseCases): Router {
+type StorageRouteUseCases = {
+  getFile: GetFileUseCase;
+  putFile: PutFileUseCase;
+  deleteFile: DeleteFileUseCase;
+};
+
+export function createStorageRouter({
+  getFile,
+  putFile,
+  deleteFile,
+}: StorageRouteUseCases): Router {
   const router = Router();
 
   router.get(/(.*)/, async (req, res) => {
@@ -94,7 +106,7 @@ export function createStorageRouter(storageUseCases: StorageUseCases): Router {
       return;
     }
     try {
-      const content = await storageUseCases.getFile(key);
+      const content = await getFile(key);
       res.setHeader("Content-Type", "application/octet-stream");
       res.send(Buffer.from(content));
     } catch (error) {
@@ -116,7 +128,7 @@ export function createStorageRouter(storageUseCases: StorageUseCases): Router {
         return;
       }
       try {
-        await storageUseCases.putFile(key, new Uint8Array(req.body));
+        await putFile(key, new Uint8Array(req.body));
         res.status(204).send();
       } catch (error) {
         sendStorageError(res, error);
@@ -138,7 +150,7 @@ export function createStorageRouter(storageUseCases: StorageUseCases): Router {
         return;
       }
       try {
-        await storageUseCases.putFile(key, new Uint8Array(req.file.buffer));
+        await putFile(key, new Uint8Array(req.file.buffer));
         res.status(204).send();
       } catch (error) {
         sendStorageError(res, error);
@@ -153,7 +165,7 @@ export function createStorageRouter(storageUseCases: StorageUseCases): Router {
       return;
     }
     try {
-      await storageUseCases.deleteFile(key);
+      await deleteFile(key);
       res.status(204).send();
     } catch (error) {
       sendStorageError(res, error);

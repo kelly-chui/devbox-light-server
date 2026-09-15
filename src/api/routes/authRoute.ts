@@ -1,5 +1,7 @@
 import { Router, type Response } from "express";
-import type { AuthUseCases } from "../../application/authUseCases.js";
+import type { GetCurrentUserUseCase } from "../../application/auth/getCurrentUserUseCase.js";
+import type { LoginUseCase } from "../../application/auth/loginUseCase.js";
+import type { LogoutUseCase } from "../../application/auth/logoutUseCase.js";
 import {
   AuthStorageError,
   InvalidTokenError,
@@ -36,7 +38,17 @@ function extractBearerToken(authHeader: string | undefined): string | null {
   return parts[1];
 }
 
-export function createAuthRouter(authUseCases: AuthUseCases): Router {
+type AuthRouteUseCases = {
+  login: LoginUseCase;
+  getCurrentUser: GetCurrentUserUseCase;
+  logout: LogoutUseCase;
+};
+
+export function createAuthRouter({
+  login,
+  getCurrentUser,
+  logout,
+}: AuthRouteUseCases): Router {
   const router = Router();
 
   router.post("/login", async (req, res) => {
@@ -48,7 +60,7 @@ export function createAuthRouter(authUseCases: AuthUseCases): Router {
     }
 
     try {
-      const result = await authUseCases.login(userId);
+      const result = await login(userId);
       res.json(result);
     } catch (error) {
       sendAuthError(res, error);
@@ -64,7 +76,7 @@ export function createAuthRouter(authUseCases: AuthUseCases): Router {
     }
 
     try {
-      const user = await authUseCases.getUserByToken(token);
+      const user = await getCurrentUser(token);
       res.json(user);
     } catch (error) {
       sendAuthError(res, error);
@@ -78,7 +90,7 @@ export function createAuthRouter(authUseCases: AuthUseCases): Router {
       return;
     }
     try {
-      await authUseCases.logout(token);
+      await logout(token);
       res.status(204).send();
     } catch (error) {
       sendAuthError(res, error);

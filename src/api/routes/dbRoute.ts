@@ -1,5 +1,9 @@
 import { Router, type Response } from "express";
-import type { DatabaseUseCases } from "../../application/databaseUseCases.js";
+import type { CreateRecordUseCase } from "../../application/database/createRecordUseCase.js";
+import type { DeleteRecordUseCase } from "../../application/database/deleteRecordUseCase.js";
+import type { GetRecordUseCase } from "../../application/database/getRecordUseCase.js";
+import type { ListRecordsUseCase } from "../../application/database/listRecordsUseCase.js";
+import type { ReplaceRecordUseCase } from "../../application/database/replaceRecordUseCase.js";
 import type { RecordData } from "../../domain/db/types.js";
 import {
   DatabaseInvalidCollectionError,
@@ -56,7 +60,21 @@ function sendDatabaseError(res: Response, error: unknown): void {
   throw error;
 }
 
-export function createCollectionsRouter(databaseUseCases: DatabaseUseCases): Router {
+type CollectionRouteUseCases = {
+  listRecords: ListRecordsUseCase;
+  getRecord: GetRecordUseCase;
+  createRecord: CreateRecordUseCase;
+  replaceRecord: ReplaceRecordUseCase;
+  deleteRecord: DeleteRecordUseCase;
+};
+
+export function createCollectionsRouter({
+  listRecords,
+  getRecord,
+  createRecord,
+  replaceRecord,
+  deleteRecord,
+}: CollectionRouteUseCases): Router {
   const router = Router();
 
   router.get("/:collection", async (req, res) => {
@@ -66,7 +84,7 @@ export function createCollectionsRouter(databaseUseCases: DatabaseUseCases): Rou
       return;
     }
     try {
-      const records = await databaseUseCases.listRecords(collection);
+      const records = await listRecords(collection);
       res.json({ collection, records });
     } catch (error) {
       sendDatabaseError(res, error);
@@ -80,7 +98,7 @@ export function createCollectionsRouter(databaseUseCases: DatabaseUseCases): Rou
       return;
     }
     try {
-      const record = await databaseUseCases.getRecord(
+      const record = await getRecord(
         params.collection,
         params.id,
       );
@@ -101,7 +119,7 @@ export function createCollectionsRouter(databaseUseCases: DatabaseUseCases): Rou
       return;
     }
     try {
-      const record = await databaseUseCases.createRecord(collection, req.body);
+      const record = await createRecord(collection, req.body);
       res.status(201).json(record);
     } catch (error) {
       sendDatabaseError(res, error);
@@ -119,7 +137,7 @@ export function createCollectionsRouter(databaseUseCases: DatabaseUseCases): Rou
       return;
     }
     try {
-      const record = await databaseUseCases.replaceRecord(
+      const record = await replaceRecord(
         params.collection,
         params.id,
         req.body,
@@ -137,7 +155,7 @@ export function createCollectionsRouter(databaseUseCases: DatabaseUseCases): Rou
       return;
     }
     try {
-      await databaseUseCases.deleteRecord(params.collection, params.id);
+      await deleteRecord(params.collection, params.id);
       res.status(204).send();
     } catch (error) {
       sendDatabaseError(res, error);

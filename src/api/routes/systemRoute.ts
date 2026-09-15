@@ -1,15 +1,24 @@
 import { Router } from "express";
-import type { SystemUseCases } from "../../application/systemUseCases.js";
+import type { GetSystemStatusUseCase } from "../../application/system/getSystemStatusUseCase.js";
+import type { GetSystemUptimeUseCase } from "../../application/system/getSystemUptimeUseCase.js";
 
-export function createSystemRouter(systemUseCases: SystemUseCases): Router {
+type SystemRouteUseCases = {
+  getSystemStatus: GetSystemStatusUseCase;
+  getSystemUptime: GetSystemUptimeUseCase;
+};
+
+export function createSystemRouter({
+  getSystemStatus,
+  getSystemUptime,
+}: SystemRouteUseCases): Router {
   const router = Router();
 
   router.get("/status", (_req, res) => {
-    res.json(systemUseCases.getStatus());
+    res.json(getSystemStatus());
   });
 
   router.get("/uptime", (_req, res) => {
-    res.json(systemUseCases.getUptime());
+    res.json(getSystemUptime());
   });
 
   return router;
