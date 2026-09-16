@@ -122,7 +122,7 @@
 <table>
   <thead><tr><th>메서드</th><th>경로</th><th>설명</th></tr></thead>
   <tbody>
-    <tr><td><span class="method get">GET</span></td><td class="endpoint">/collections/:collection</td><td>컬렉션 전체 목록 → <code>{ "collection", "records": [{ "id", "data" }] }</code></td></tr>
+    <tr><td><span class="method get">GET</span></td><td class="endpoint">/collections/:collection</td><td>컬렉션 목록. <code>filter[field]=value</code>로 최상위 필드를 AND 조건으로 완전 일치 필터링 → <code>{ "collection", "records": [{ "id", "data" }] }</code></td></tr>
     <tr><td><span class="method get">GET</span></td><td class="endpoint">/collections/:collection/:id</td><td>단건 조회 → <code>{ "id", "data" }</code></td></tr>
     <tr><td><span class="method post">POST</span></td><td class="endpoint">/collections/:collection</td><td>레코드 생성. 본문에 임의 JSON 객체 → <code>201</code> <code>{ "id", "data" }</code></td></tr>
     <tr><td><span class="method put">PUT</span></td><td class="endpoint">/collections/:collection/:id</td><td>전체 교체 → <code>{ "id", "data" }</code></td></tr>

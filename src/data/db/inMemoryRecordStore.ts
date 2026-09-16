@@ -1,5 +1,9 @@
 import { RecordNotFoundError, type RecordStore } from "../../domain/db/recordStore.js";
-import type { RecordData, StoredRecord } from "../../domain/db/types.js";
+import type {
+  ListRecordsOptions,
+  RecordData,
+  StoredRecord,
+} from "../../domain/db/types.js";
 
 type CollectionStore = {
   nextId: number;
@@ -19,15 +23,27 @@ export class InMemoryRecordStore implements RecordStore {
     return created;
   }
 
-  async list(collection: string): Promise<StoredRecord[]> {
+  async list(
+    collection: string,
+    options?: ListRecordsOptions,
+  ): Promise<StoredRecord[]> {
     const store = this.collections.get(collection);
     if (store === undefined) {
       return [];
     }
-    return Array.from(store.records.entries()).map(([id, data]) => ({
+    const records = Array.from(store.records.entries()).map(([id, data]) => ({
       id,
       data: structuredClone(data),
     }));
+    const filter = options?.filter;
+    if (filter === undefined) {
+      return records;
+    }
+    return records.filter((record) =>
+      Object.entries(filter).every(([field, value]) =>
+        (field === "id" ? record.id : record.data[field]) === value,
+      ),
+    );
   }
 
   async get(collection: string, id: string): Promise<StoredRecord | undefined> {

@@ -8,7 +8,11 @@ import {
   RecordStoreWriteError,
   type RecordStore,
 } from "../../domain/db/recordStore.js";
-import type { RecordData, StoredRecord } from "../../domain/db/types.js";
+import type {
+  ListRecordsOptions,
+  RecordData,
+  StoredRecord,
+} from "../../domain/db/types.js";
 
 const COLLECTION_NAME_PATTERN = /^[a-zA-Z0-9._-]+$/;
 
@@ -76,12 +80,24 @@ export class JsonFileRecordStore implements RecordStore {
     }
   }
 
-  async list(collection: string): Promise<StoredRecord[]> {
+  async list(
+    collection: string,
+    options?: ListRecordsOptions,
+  ): Promise<StoredRecord[]> {
     const store = await this.readCollection(collection);
-    return Object.entries(store.records).map(([id, data]) => ({
+    const records = Object.entries(store.records).map(([id, data]) => ({
       id,
       data: structuredClone(data),
     }));
+    const filter = options?.filter;
+    if (filter === undefined) {
+      return records;
+    }
+    return records.filter((record) =>
+      Object.entries(filter).every(([field, value]) =>
+        (field === "id" ? record.id : record.data[field]) === value,
+      ),
+    );
   }
 
   async get(collection: string, id: string): Promise<StoredRecord | undefined> {

@@ -100,6 +100,41 @@ describe("HTTP API contract", () => {
     });
   });
 
+  it("filters collection records from query parameters", async () => {
+    const first = await request(app)
+      .post("/collections/http-contract-filter")
+      .send({ status: "open", completed: false, priority: 3 })
+      .expect(201);
+    await request(app)
+      .post("/collections/http-contract-filter")
+      .send({ status: "done", completed: true, priority: 1 })
+      .expect(201);
+
+    const filtered = await request(app)
+      .get("/collections/http-contract-filter")
+      .query({
+        "filter[status]": "open",
+        "filter[completed]": "false",
+        "filter[priority]": "3",
+      })
+      .expect(200);
+    expect(filtered.body).toEqual({
+      collection: "http-contract-filter",
+      records: [first.body],
+    });
+
+    const byId = await request(app)
+      .get("/collections/http-contract-filter")
+      .query({ "filter[id]": first.body.id })
+      .expect(200);
+    expect(byId.body.records).toEqual([first.body]);
+
+    const invalid = await request(app)
+      .get("/collections/http-contract-filter?filter[]=open")
+      .expect(400);
+    expect(invalid.body).toEqual({ error: "invalid_filter" });
+  });
+
   it("supports login, authenticated lookup, and logout", async () => {
     const createdUser = await request(app)
       .post("/collections/users")

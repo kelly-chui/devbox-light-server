@@ -11,4 +11,15 @@ describe("createListRecordsUseCase", () => {
 
     await expect(listRecords("items")).resolves.toEqual([first, second]);
   });
+
+  it("passes a filter to the record store", async () => {
+    const recordStore = new InMemoryRecordStore();
+    const listRecords = createListRecordsUseCase({ recordStore });
+    const open = await recordStore.create("items", { status: "open" });
+    await recordStore.create("items", { status: "done" });
+
+    await expect(
+      listRecords("items", { filter: { status: "open" } }),
+    ).resolves.toEqual([open]);
+  });
 });

@@ -45,6 +45,30 @@ describe("JsonFileRecordStore", () => {
     expect(records[1]?.data).toEqual({ name: "Linus" });
   });
 
+  it("filters records by exact top-level fields with AND semantics", async () => {
+    const open = await store.create("todos", {
+      status: "open",
+      completed: false,
+      priority: 3,
+    });
+    await store.create("todos", {
+      status: "done",
+      completed: true,
+      priority: 3,
+    });
+    await store.create("todos", {
+      status: "open",
+      completed: false,
+      priority: 1,
+    });
+
+    await expect(
+      store.list("todos", {
+        filter: { status: "open", completed: false, priority: 3 },
+      }),
+    ).resolves.toEqual([open]);
+  });
+
   it("returns an empty list for a missing collection", async () => {
     expect(await store.list("missing")).toEqual([]);
     expect(await store.get("missing", "1")).toBeUndefined();

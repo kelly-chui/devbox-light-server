@@ -102,7 +102,7 @@ docker run -p 3000:3000 -e CORS_ORIGIN=http://localhost:5173 devbox-light-server
 |---|---|---|
 | GET | `/system/status` | 상태 확인 |
 | GET | `/system/uptime` | 업타임 확인 |
-| GET | `/collections/:collection` | 컬렉션 전체 목록 |
+| GET | `/collections/:collection` | 컬렉션 목록. `filter[field]=value`로 최상위 필드 완전 일치 필터 가능 |
 | GET | `/collections/:collection/:id` | 단건 조회 |
 | POST | `/collections/:collection` | 레코드 생성 |
 | PUT | `/collections/:collection/:id` | 전체 교체 |

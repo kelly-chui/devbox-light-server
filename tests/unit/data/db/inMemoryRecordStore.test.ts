@@ -36,6 +36,31 @@ describe("InMemoryRecordStore", () => {
     expect(records[1]?.data).toEqual({ name: "Linus" });
   });
 
+  it("filters records by exact top-level fields with AND semantics", async () => {
+    const store = new InMemoryRecordStore();
+    const open = await store.create("todos", {
+      status: "open",
+      completed: false,
+      priority: 3,
+    });
+    await store.create("todos", {
+      status: "done",
+      completed: true,
+      priority: 3,
+    });
+    await store.create("todos", {
+      status: "open",
+      completed: false,
+      priority: 1,
+    });
+
+    await expect(
+      store.list("todos", {
+        filter: { status: "open", completed: false, priority: 3 },
+      }),
+    ).resolves.toEqual([open]);
+  });
+
   it("replaces existing records", async () => {
     const store = new InMemoryRecordStore();
 

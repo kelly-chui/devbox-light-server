@@ -5,6 +5,7 @@ import type { GetRecordUseCase } from "../../application/database/getRecordUseCa
 import type { ListRecordsUseCase } from "../../application/database/listRecordsUseCase.js";
 import type { ReplaceRecordUseCase } from "../../application/database/replaceRecordUseCase.js";
 import type { RecordData } from "../../domain/db/types.js";
+import type { FilterValue, RecordFilter } from "../../domain/db/types.js";
 import {
   DatabaseInvalidCollectionError,
   DatabaseReadError,
@@ -21,6 +22,48 @@ function readCollection(collection: string | undefined): string | null {
     return null;
   }
   return collection;
+}
+
+function parseFilterValue(value: string): FilterValue {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  if (value === "null") return null;
+
+  const numericValue = Number(value);
+  if (value.trim() !== "" && Number.isFinite(numericValue)) {
+    return numericValue;
+  }
+  return value;
+}
+
+function readFilter(query: Record<string, unknown>): RecordFilter | null | undefined {
+  const value = query.filter;
+  const filter: RecordFilter = {};
+
+  if (value !== undefined) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return null;
+    }
+    for (const [field, rawValue] of Object.entries(value)) {
+      if (field.length === 0 || typeof rawValue !== "string") {
+        return null;
+      }
+      filter[field] = field === "id" ? rawValue : parseFilterValue(rawValue);
+    }
+    return filter;
+  }
+
+  const entries = Object.entries(query).filter(([key]) => key.startsWith("filter["));
+  if (entries.length === 0) return undefined;
+  for (const [key, rawValue] of entries) {
+    const match = /^filter\[([^\]]*)\]$/.exec(key);
+    if (match?.[1] === undefined || match[1].length === 0 || typeof rawValue !== "string") {
+      return null;
+    }
+    const field = match[1];
+    filter[field] = field === "id" ? rawValue : parseFilterValue(rawValue);
+  }
+  return filter;
 }
 
 function readRecordParams(
@@ -83,8 +126,15 @@ export function createCollectionsRouter({
       res.status(400).json({ error: "invalid_collection" });
       return;
     }
+    const filter = readFilter(req.query);
+    if (filter === null) {
+      res.status(400).json({ error: "invalid_filter" });
+      return;
+    }
     try {
-      const records = await listRecords(collection);
+      const records = filter === undefined
+        ? await listRecords(collection)
+        : await listRecords(collection, { filter });
       res.json({ collection, records });
     } catch (error) {
       sendDatabaseError(res, error);
