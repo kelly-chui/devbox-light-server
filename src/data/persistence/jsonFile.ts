@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 
 export class JsonFileReadError extends Error {
@@ -41,8 +42,32 @@ export async function writeJsonFile(
   filePath: string,
   value: unknown,
 ): Promise<void> {
-  const tempPath = `${filePath}.tmp`;
+  const tempPath = `${filePath}.${randomUUID()}.tmp`;
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(tempPath, JSON.stringify(value, null, 2));
   await fs.rename(tempPath, filePath);
+}
+
+const fileOperationQueues = new Map<string, Promise<void>>();
+
+export async function runJsonFileOperation<T>(
+  filePath: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const previous = fileOperationQueues.get(filePath) ?? Promise.resolve();
+  let releaseCurrent!: () => void;
+  const current = new Promise<void>((resolve) => {
+    releaseCurrent = resolve;
+  });
+  fileOperationQueues.set(filePath, current);
+
+  await previous;
+  try {
+    return await operation();
+  } finally {
+    releaseCurrent();
+    if (fileOperationQueues.get(filePath) === current) {
+      fileOperationQueues.delete(filePath);
+    }
+  }
 }

@@ -35,6 +35,28 @@ describe("JsonFileTokenStore", () => {
     expect(await store.getUserId("token-b")).toBe("user-2");
   });
 
+  it("serializes concurrent saves from instances sharing a token file", async () => {
+    const otherStore = new JsonFileTokenStore(rootDirectory);
+    await Promise.all(
+      Array.from({ length: 10 }, (_, index) =>
+        (index % 2 === 0 ? store : otherStore).save(
+          `token-${index}`,
+          `user-${index}`,
+        ),
+      ),
+    );
+
+    await expect(
+      Promise.all(
+        Array.from({ length: 10 }, (_, index) =>
+          store.getUserId(`token-${index}`),
+        ),
+      ),
+    ).resolves.toEqual(
+      Array.from({ length: 10 }, (_, index) => `user-${index}`),
+    );
+  });
+
   it("removes tokens from the store", async () => {
     await store.save("token-abc", "user-123");
 

@@ -123,7 +123,7 @@ System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다�
 - **JSON 바디 100KB 제한** — `express.json()` 기본값. 큰 레코드는 413 오류
 - **파일 응답 고정 `application/octet-stream`** — 확장자별 MIME, Range(부분 요청), ETag 미지원
 - **업로드 메모리 버퍼링** — 원시 바디와 Multer multipart 파일을 저장 전 메모리에 로드 (최대 50MB)
-- **단일 프로세스 가정** — 같은 디렉토리를 여러 프로세스가 쓰면 마지막 쓰기 기준
+- **다중 프로세스 미지원** — 한 프로세스 안에서는 JSON 변경 작업을 파일별로 직렬화하지만, 같은 디렉토리를 여러 프로세스가 쓰면 데이터 유실이 발생할 수 있음
 - **손상된 파일 발견 시** — 조용히 초기화하지 않고 명시적 에러로 실패
 
 ## 개발자 문서
@@ -168,7 +168,8 @@ Route → Service → Interface → Implementation
 
 - **최신 데이터 읽기** — DB와 Auth는 각 작업마다 JSON 파일을 다시 읽음
 - **즉시 반영** — DB·Auth·파일 변경 시 즉시 디스크에 저장
-- **원자적 JSON 쓰기** — DB와 Auth JSON은 `<file>.tmp`에 쓴 뒤 `rename`
+- **원자적 JSON 쓰기** — DB와 Auth JSON은 고유 임시 파일에 쓴 뒤 `rename`
+- **프로세스 내 동시 쓰기 안전성** — 같은 JSON 파일의 변경 작업은 read-modify-write 전체를 순차 처리
 - **모드별 ID** — json은 UUID, memory는 컬렉션별 증가 문자열을 발급
 - **경로 안전** — 컬렉션명 검증, 파일 키의 경로 탈출 차단
 

@@ -94,6 +94,27 @@ describe("JsonFileRecordStore", () => {
     expect(await reloaded.list("users")).toHaveLength(2);
   });
 
+  it("serializes concurrent writes from instances sharing a collection", async () => {
+    const otherStore = new JsonFileRecordStore(rootDirectory);
+    const created = await Promise.all(
+      Array.from({ length: 10 }, (_, index) =>
+        (index % 2 === 0 ? store : otherStore).create("users", {
+          name: `User ${index}`,
+        }),
+      ),
+    );
+
+    const persisted = await store.list("users");
+
+    expect(persisted).toHaveLength(10);
+    expect(new Set(persisted.map((record) => record.id))).toEqual(
+      new Set(created.map((record) => record.id)),
+    );
+    expect(persisted.map((record) => record.data.name).sort()).toEqual(
+      Array.from({ length: 10 }, (_, index) => `User ${index}`).sort(),
+    );
+  });
+
   it("replaces existing records", async () => {
     const created = await createUser();
 

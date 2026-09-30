@@ -1,5 +1,9 @@
 import path from "node:path";
-import { readJsonFile, writeJsonFile } from "../persistence/jsonFile.js";
+import {
+  readJsonFile,
+  runJsonFileOperation,
+  writeJsonFile,
+} from "../persistence/jsonFile.js";
 import { InvalidTokenFileError } from "./authErrors.js";
 import {
   TokenStoreReadError,
@@ -45,13 +49,15 @@ export class JsonFileTokenStore implements TokenStore {
   }
 
   async save(token: string, userId: string): Promise<void> {
-    const tokens = await this.readTokens();
-    tokens[token] = userId;
-    try {
-      await writeJsonFile(this.filePath, tokens);
-    } catch (error) {
-      throw new TokenStoreWriteError({ cause: error });
-    }
+    await runJsonFileOperation(this.filePath, async () => {
+      const tokens = await this.readTokens();
+      tokens[token] = userId;
+      try {
+        await writeJsonFile(this.filePath, tokens);
+      } catch (error) {
+        throw new TokenStoreWriteError({ cause: error });
+      }
+    });
   }
 
   async getUserId(token: string): Promise<string | undefined> {
@@ -60,14 +66,16 @@ export class JsonFileTokenStore implements TokenStore {
   }
 
   async remove(token: string): Promise<void> {
-    const tokens = await this.readTokens();
-    if (tokens[token] !== undefined) {
-      delete tokens[token];
-      try {
-        await writeJsonFile(this.filePath, tokens);
-      } catch (error) {
-        throw new TokenStoreWriteError({ cause: error });
+    await runJsonFileOperation(this.filePath, async () => {
+      const tokens = await this.readTokens();
+      if (tokens[token] !== undefined) {
+        delete tokens[token];
+        try {
+          await writeJsonFile(this.filePath, tokens);
+        } catch (error) {
+          throw new TokenStoreWriteError({ cause: error });
+        }
       }
-    }
+    });
   }
 }
