@@ -1,5 +1,6 @@
 import type {
   ListRecordsOptions,
+  ListRecordsResult,
   RecordData,
   StoredRecord,
 } from "./types.js";
@@ -8,7 +9,7 @@ export interface RecordStore {
   list(
     collection: string,
     options?: ListRecordsOptions,
-  ): Promise<StoredRecord[]>;
+  ): Promise<ListRecordsResult>;
   get(collection: string, id: string): Promise<StoredRecord | undefined>;
   create(collection: string, data: RecordData): Promise<StoredRecord>;
   replace(collection: string, id: string, data: RecordData): Promise<void>;

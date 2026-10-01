@@ -9,7 +9,10 @@ describe("createListRecordsUseCase", () => {
     const first = await recordStore.create("items", { name: "first" });
     const second = await recordStore.create("items", { name: "second" });
 
-    await expect(listRecords("items")).resolves.toEqual([first, second]);
+    await expect(listRecords("items")).resolves.toEqual({
+      records: [first, second],
+      total: 2,
+    });
   });
 
   it("passes a filter to the record store", async () => {
@@ -20,6 +23,6 @@ describe("createListRecordsUseCase", () => {
 
     await expect(
       listRecords("items", { filter: { status: "open" } }),
-    ).resolves.toEqual([open]);
+    ).resolves.toEqual({ records: [open], total: 1 });
   });
 });

@@ -31,9 +31,13 @@ describe("InMemoryRecordStore", () => {
 
     const records = await store.list("users");
 
-    expect(records).toHaveLength(2);
-    expect(records[0]?.data).toEqual({ name: "Ada" });
-    expect(records[1]?.data).toEqual({ name: "Linus" });
+    expect(records).toEqual({
+      records: [
+        { id: "1", data: { name: "Ada" } },
+        { id: "2", data: { name: "Linus" } },
+      ],
+      total: 2,
+    });
   });
 
   it("filters records by exact top-level fields with AND semantics", async () => {
@@ -58,7 +62,52 @@ describe("InMemoryRecordStore", () => {
       store.list("todos", {
         filter: { status: "open", completed: false, priority: 3 },
       }),
-    ).resolves.toEqual([open]);
+    ).resolves.toEqual({ records: [open], total: 1 });
+  });
+
+  it("sorts top-level fields in both directions with id tie-breaking", async () => {
+    const store = new InMemoryRecordStore();
+    const first = await store.create("todos", { priority: 2 });
+    const second = await store.create("todos", { priority: 1 });
+    const third = await store.create("todos", { priority: 2 });
+    const tiedRecords = [first, third].sort((left, right) =>
+      left.id.localeCompare(right.id),
+    );
+
+    await expect(
+      store.list("todos", { sort: { field: "priority", direction: "asc" } }),
+    ).resolves.toEqual({ records: [second, ...tiedRecords], total: 3 });
+    await expect(
+      store.list("todos", { sort: { field: "priority", direction: "desc" } }),
+    ).resolves.toEqual({ records: [...tiedRecords, second], total: 3 });
+    await expect(
+      store.list("todos", { sort: { field: "id", direction: "desc" } }),
+    ).resolves.toEqual({
+      records: [first, second, third].sort((left, right) =>
+        right.id.localeCompare(left.id),
+      ),
+      total: 3,
+    });
+  });
+
+  it("filters before sorting and paginating while retaining the filtered total", async () => {
+    const store = new InMemoryRecordStore();
+    await store.create("todos", { status: "done", priority: 1 });
+    const second = await store.create("todos", { status: "open", priority: 2 });
+    const third = await store.create("todos", { status: "open", priority: 3 });
+    await store.create("todos", { status: "open", priority: 1 });
+
+    await expect(
+      store.list("todos", {
+        filter: { status: "open" },
+        sort: { field: "priority", direction: "desc" },
+        offset: 1,
+        limit: 1,
+      }),
+    ).resolves.toEqual({ records: [second], total: 3 });
+    await expect(
+      store.list("todos", { offset: 10, limit: 1 }),
+    ).resolves.toEqual({ records: [], total: 4 });
   });
 
   it("replaces existing records", async () => {
@@ -141,22 +190,28 @@ describe("InMemoryRecordStore", () => {
       title: "Hello",
     });
 
-    expect(await store.list("users")).toEqual([
-      {
-        id: expect.any(String),
-        data: {
-          name: "Ada",
+    expect(await store.list("users")).toEqual({
+      records: [
+        {
+          id: expect.any(String),
+          data: {
+            name: "Ada",
+          },
         },
-      },
-    ]);
+      ],
+      total: 1,
+    });
 
-    expect(await store.list("posts")).toEqual([
-      {
-        id: expect.any(String),
-        data: {
-          title: "Hello",
+    expect(await store.list("posts")).toEqual({
+      records: [
+        {
+          id: expect.any(String),
+          data: {
+            title: "Hello",
+          },
         },
-      },
-    ]);
+      ],
+      total: 1,
+    });
   });
 });

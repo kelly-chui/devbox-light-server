@@ -132,10 +132,10 @@ export function createCollectionsRouter({
       return;
     }
     try {
-      const records = filter === undefined
+      const result = filter === undefined
         ? await listRecords(collection)
         : await listRecords(collection, { filter });
-      res.json({ collection, records });
+      res.json({ collection, records: result.records });
     } catch (error) {
       sendDatabaseError(res, error);
     }

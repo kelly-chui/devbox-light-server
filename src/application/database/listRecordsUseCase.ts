@@ -1,14 +1,14 @@
 import type { RecordStore } from "../../domain/db/recordStore.js";
 import type {
   ListRecordsOptions,
-  StoredRecord,
+  ListRecordsResult,
 } from "../../domain/db/types.js";
 import { mapRecordStoreError } from "./mapRecordStoreError.js";
 
 export type ListRecordsUseCase = (
   collection: string,
   options?: ListRecordsOptions,
-) => Promise<StoredRecord[]>;
+) => Promise<ListRecordsResult>;
 
 export function createListRecordsUseCase({
   recordStore,

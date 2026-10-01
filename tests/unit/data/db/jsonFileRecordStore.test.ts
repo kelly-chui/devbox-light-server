@@ -40,9 +40,10 @@ describe("JsonFileRecordStore", () => {
 
     const records = await store.list("users");
 
-    expect(records).toHaveLength(2);
-    expect(records[0]?.data).toEqual({ name: "Ada" });
-    expect(records[1]?.data).toEqual({ name: "Linus" });
+    expect(records.records).toHaveLength(2);
+    expect(records.records[0]?.data).toEqual({ name: "Ada" });
+    expect(records.records[1]?.data).toEqual({ name: "Linus" });
+    expect(records.total).toBe(2);
   });
 
   it("filters records by exact top-level fields with AND semantics", async () => {
@@ -66,11 +67,54 @@ describe("JsonFileRecordStore", () => {
       store.list("todos", {
         filter: { status: "open", completed: false, priority: 3 },
       }),
-    ).resolves.toEqual([open]);
+    ).resolves.toEqual({ records: [open], total: 1 });
+  });
+
+  it("sorts top-level fields in both directions with id tie-breaking", async () => {
+    const first = await store.create("todos", { priority: 2 });
+    const second = await store.create("todos", { priority: 1 });
+    const third = await store.create("todos", { priority: 2 });
+    const tiedRecords = [first, third].sort((left, right) =>
+      left.id.localeCompare(right.id),
+    );
+
+    await expect(
+      store.list("todos", { sort: { field: "priority", direction: "asc" } }),
+    ).resolves.toEqual({ records: [second, ...tiedRecords], total: 3 });
+    await expect(
+      store.list("todos", { sort: { field: "priority", direction: "desc" } }),
+    ).resolves.toEqual({ records: [...tiedRecords, second], total: 3 });
+    await expect(
+      store.list("todos", { sort: { field: "id", direction: "desc" } }),
+    ).resolves.toEqual({
+      records: [first, second, third].sort((left, right) =>
+        right.id.localeCompare(left.id),
+      ),
+      total: 3,
+    });
+  });
+
+  it("filters before sorting and paginating while retaining the filtered total", async () => {
+    await store.create("todos", { status: "done", priority: 1 });
+    const second = await store.create("todos", { status: "open", priority: 2 });
+    await store.create("todos", { status: "open", priority: 3 });
+    await store.create("todos", { status: "open", priority: 1 });
+
+    await expect(
+      store.list("todos", {
+        filter: { status: "open" },
+        sort: { field: "priority", direction: "desc" },
+        offset: 1,
+        limit: 1,
+      }),
+    ).resolves.toEqual({ records: [second], total: 3 });
+    await expect(
+      store.list("todos", { offset: 10, limit: 1 }),
+    ).resolves.toEqual({ records: [], total: 4 });
   });
 
   it("returns an empty list for a missing collection", async () => {
-    expect(await store.list("missing")).toEqual([]);
+    expect(await store.list("missing")).toEqual({ records: [], total: 0 });
     expect(await store.get("missing", "1")).toBeUndefined();
   });
 
@@ -91,7 +135,7 @@ describe("JsonFileRecordStore", () => {
     expect(first.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(second.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(second.id).not.toBe(first.id);
-    expect(await reloaded.list("users")).toHaveLength(2);
+    expect((await reloaded.list("users")).records).toHaveLength(2);
   });
 
   it("serializes concurrent writes from instances sharing a collection", async () => {
@@ -106,11 +150,12 @@ describe("JsonFileRecordStore", () => {
 
     const persisted = await store.list("users");
 
-    expect(persisted).toHaveLength(10);
-    expect(new Set(persisted.map((record) => record.id))).toEqual(
+    expect(persisted.records).toHaveLength(10);
+    expect(persisted.total).toBe(10);
+    expect(new Set(persisted.records.map((record) => record.id))).toEqual(
       new Set(created.map((record) => record.id)),
     );
-    expect(persisted.map((record) => record.data.name).sort()).toEqual(
+    expect(persisted.records.map((record) => record.data.name).sort()).toEqual(
       Array.from({ length: 10 }, (_, index) => `User ${index}`).sort(),
     );
   });
@@ -200,12 +245,14 @@ describe("JsonFileRecordStore", () => {
     await store.create("users", { name: "Ada" });
     await store.create("posts", { title: "Hello" });
 
-    expect(await store.list("users")).toEqual([
-      { id: expect.any(String), data: { name: "Ada" } },
-    ]);
-    expect(await store.list("posts")).toEqual([
-      { id: expect.any(String), data: { title: "Hello" } },
-    ]);
+    expect(await store.list("users")).toEqual({
+      records: [{ id: expect.any(String), data: { name: "Ada" } }],
+      total: 1,
+    });
+    expect(await store.list("posts")).toEqual({
+      records: [{ id: expect.any(String), data: { title: "Hello" } }],
+      total: 1,
+    });
   });
 
   it("throws on invalid collection names", async () => {
