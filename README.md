@@ -102,7 +102,7 @@ docker run -p 3000:3000 -e CORS_ORIGIN=http://localhost:5173 devbox-light-server
 |---|---|---|
 | GET | `/system/status` | 상태 확인 |
 | GET | `/system/uptime` | 업타임 확인 |
-| GET | `/collections/:collection` | 컬렉션 목록. `filter[field]=value`로 최상위 필드 완전 일치 필터 가능 |
+| GET | `/collections/:collection` | 목록: `filter[field]=value`, `sort=field:asc\|desc`, `offset`, `limit` 지원 |
 | GET | `/collections/:collection/:id` | 단건 조회 |
 | POST | `/collections/:collection` | 레코드 생성 |
 | PUT | `/collections/:collection/:id` | 전체 교체 |
@@ -114,6 +114,9 @@ docker run -p 3000:3000 -e CORS_ORIGIN=http://localhost:5173 devbox-light-server
 | PUT | `/files/:key` | 원시 바이너리 업로드 (최대 50MB) |
 | POST | `/files/:key` | Multer multipart 업로드 (`file` 필드, 최대 50MB) |
 | DELETE | `/files/:key` | 파일 삭제 |
+
+예: `GET /collections/users?filter[active]=true&sort=name:asc&offset=0&limit=10`.
+응답은 `{ "collection": "users", "records": [], "total": 0, "offset": 0, "limit": 10 }` 형식이다. `total`은 필터 후 전체 수이며 기본 `offset`은 0, 제한 없는 `limit`은 null이다. 잘못된 정렬 또는 페이지 값은 각각 `400 {"error":"invalid_sort"}`, `400 {"error":"invalid_pagination"}`을 반환한다.
 
 System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다운로드는 바이너리를 반환하고, `204` 응답은 본문이 없습니다. 모든 오류 응답은 `{ "error": "..." }` 형식의 JSON입니다. 상세 응답·오류 코드·curl 예제는 [docs/api.html](docs/api.html)을 참고하세요.
 

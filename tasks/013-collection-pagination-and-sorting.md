@@ -6,21 +6,20 @@
 
 ## 2. 체크포인트
 
-- [ ] 목록 조회 옵션에 단일 필드 정렬과 `offset`·`limit` 페이지네이션 계약을 정의한다.
-- [ ] 목록 조회 결과에 필터 적용 후 전체 레코드 수(`total`)를 포함한다.
-- [ ] 인메모리 레코드 저장소에 필터·정렬·페이지네이션을 구현한다.
-- [ ] JSON 레코드 저장소에 같은 동작을 구현한다.
-- [ ] HTTP query parameter를 조회 옵션으로 변환하고 잘못된 값은 `400`으로 응답한다.
-- [ ] 컬렉션 목록 API 문서와 HTTP 계약을 갱신한다.
-- [ ] 두 저장소의 동작 일관성과 공개 HTTP 동작을 테스트한다.
+- [x] 목록 조회 옵션에 단일 필드 정렬과 `offset`·`limit` 페이지네이션 계약을 정의한다.
+- [x] 목록 조회 결과에 필터 적용 후 전체 레코드 수(`total`)를 포함한다.
+- [x] 인메모리 레코드 저장소에 필터·정렬·페이지네이션을 구현한다.
+- [x] JSON 레코드 저장소에 같은 동작을 구현한다.
+- [x] HTTP query parameter를 조회 옵션으로 변환하고 잘못된 값은 `400`으로 응답한다.
+- [x] 컬렉션 목록 API 문서와 HTTP 계약을 갱신한다.
+- [x] 두 저장소의 동작 일관성과 공개 HTTP 동작을 테스트한다.
 
 ## 3. 테스트
 
-- 인메모리·JSON 레코드 저장소의 필터, 단일 필드 정렬, `offset`·`limit`, `total`
-- 잘못된 정렬·페이지네이션 query의 HTTP 오류 응답
-- 컬렉션 목록 endpoint의 페이지네이션·정렬 응답 계약
-- `npm test`
-- `npm run build`
+- `npx vitest run tests/unit/data/db/inMemoryRecordStore.test.ts tests/unit/data/db/jsonFileRecordStore.test.ts tests/unit/application/database/listRecordsUseCase.test.ts` — 36개 통과
+- `npx vitest run tests/integration/httpContract.test.ts` — 11개 통과
+- `npm test -- --run` — 22개 파일, 101개 테스트 통과
+- `npm run build` — 통과
 
 ## 4. 세부사항
 

@@ -6,6 +6,7 @@ import type { ListRecordsUseCase } from "../../application/database/listRecordsU
 import type { ReplaceRecordUseCase } from "../../application/database/replaceRecordUseCase.js";
 import type { RecordData } from "../../domain/db/types.js";
 import type { FilterValue, RecordFilter } from "../../domain/db/types.js";
+import type { RecordSort } from "../../domain/db/types.js";
 import {
   DatabaseInvalidCollectionError,
   DatabaseReadError,
@@ -64,6 +65,21 @@ function readFilter(query: Record<string, unknown>): RecordFilter | null | undef
     filter[field] = field === "id" ? rawValue : parseFilterValue(rawValue);
   }
   return filter;
+}
+
+function readSort(value: unknown): RecordSort | null | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") return null;
+  const match = /^([^:\s]+):(asc|desc)$/.exec(value);
+  if (!match) return null;
+  return { field: match[1]!, direction: match[2] as "asc" | "desc" };
+}
+
+function readPageValue(value: unknown, minimum: number): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= minimum ? parsed : null;
 }
 
 function readRecordParams(
@@ -131,11 +147,25 @@ export function createCollectionsRouter({
       res.status(400).json({ error: "invalid_filter" });
       return;
     }
+    const sort = readSort(req.query.sort);
+    if (sort === null) {
+      res.status(400).json({ error: "invalid_sort" });
+      return;
+    }
+    const offset = readPageValue(req.query.offset, 0);
+    const limit = readPageValue(req.query.limit, 1);
+    if (offset === null || limit === null) {
+      res.status(400).json({ error: "invalid_pagination" });
+      return;
+    }
     try {
-      const result = filter === undefined
-        ? await listRecords(collection)
-        : await listRecords(collection, { filter });
-      res.json({ collection, records: result.records });
+      const result = await listRecords(collection, {
+        ...(filter === undefined ? {} : { filter }),
+        ...(sort === undefined ? {} : { sort }),
+        ...(offset === undefined ? {} : { offset }),
+        ...(limit === undefined ? {} : { limit }),
+      });
+      res.json({ collection, records: result.records, total: result.total, offset: offset ?? 0, limit: limit ?? null });
     } catch (error) {
       sendDatabaseError(res, error);
     }

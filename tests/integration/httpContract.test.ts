@@ -84,6 +84,7 @@ describe("HTTP API contract", () => {
     expect(listed.body).toEqual({
       collection: "http-contract-items",
       records: [replaced.body],
+      total: 1, offset: 0, limit: null,
     });
 
     await request(app)
@@ -121,6 +122,7 @@ describe("HTTP API contract", () => {
     expect(filtered.body).toEqual({
       collection: "http-contract-filter",
       records: [first.body],
+      total: 1, offset: 0, limit: null,
     });
 
     const byId = await request(app)
@@ -133,6 +135,29 @@ describe("HTTP API contract", () => {
       .get("/collections/http-contract-filter?filter[]=open")
       .expect(400);
     expect(invalid.body).toEqual({ error: "invalid_filter" });
+  });
+
+  it("sorts and paginates filtered collection records", async () => {
+    const path = "/collections/http-contract-pages";
+    await request(app).post(path).send({ status: "open", rank: 1 }).expect(201);
+    const middle = await request(app).post(path).send({ status: "open", rank: 2 }).expect(201);
+    await request(app).post(path).send({ status: "open", rank: 3 }).expect(201);
+    await request(app).post(path).send({ status: "done", rank: 4 }).expect(201);
+    const response = await request(app).get(path).query({ "filter[status]": "open", sort: "rank:desc", offset: "1", limit: "1" }).expect(200);
+    expect(response.body).toEqual({ collection: "http-contract-pages", records: [middle.body], total: 3, offset: 1, limit: 1 });
+    const empty = await request(app).get(path).query({ offset: "20" }).expect(200);
+    expect(empty.body).toEqual({ collection: "http-contract-pages", records: [], total: 4, offset: 20, limit: null });
+  });
+
+  it("rejects invalid sort and pagination parameters", async () => {
+    for (const query of ["sort=name", "sort=:asc", "sort=name:up", "sort=name:asc&sort=id:desc"]) {
+      const response = await request(app).get(`/collections/items?${query}`).expect(400);
+      expect(response.body).toEqual({ error: "invalid_sort" });
+    }
+    for (const query of ["offset=-1", "offset=1.5", "offset=", "offset=9007199254740992", "limit=0", "limit=-1", "limit=1&limit=2"]) {
+      const response = await request(app).get(`/collections/items?${query}`).expect(400);
+      expect(response.body).toEqual({ error: "invalid_pagination" });
+    }
   });
 
   it("supports login, authenticated lookup, and logout", async () => {
