@@ -4,6 +4,7 @@ import type { DeleteRecordUseCase } from "../../application/database/deleteRecor
 import type { GetRecordUseCase } from "../../application/database/getRecordUseCase.js";
 import type { ListRecordsUseCase } from "../../application/database/listRecordsUseCase.js";
 import type { ReplaceRecordUseCase } from "../../application/database/replaceRecordUseCase.js";
+import type { UpdateRecordUseCase } from "../../application/database/updateRecordUseCase.js";
 import type { RecordData } from "../../domain/db/types.js";
 import type { FilterValue, RecordFilter } from "../../domain/db/types.js";
 import type { RecordSort } from "../../domain/db/types.js";
@@ -124,6 +125,7 @@ type CollectionRouteUseCases = {
   getRecord: GetRecordUseCase;
   createRecord: CreateRecordUseCase;
   replaceRecord: ReplaceRecordUseCase;
+  updateRecord: UpdateRecordUseCase;
   deleteRecord: DeleteRecordUseCase;
 };
 
@@ -132,6 +134,7 @@ export function createCollectionsRouter({
   getRecord,
   createRecord,
   replaceRecord,
+  updateRecord,
   deleteRecord,
 }: CollectionRouteUseCases): Router {
   const router = Router();
@@ -218,6 +221,28 @@ export function createCollectionsRouter({
     }
     try {
       const record = await replaceRecord(
+        params.collection,
+        params.id,
+        req.body,
+      );
+      res.json(record);
+    } catch (error) {
+      sendDatabaseError(res, error);
+    }
+  });
+
+  router.patch("/:collection/:id", async (req, res) => {
+    const params = readRecordParams(req.params.collection, req.params.id);
+    if (params === null) {
+      res.status(400).json({ error: "invalid_params" });
+      return;
+    }
+    if (!isRecordData(req.body)) {
+      res.status(400).json({ error: "invalid_record" });
+      return;
+    }
+    try {
+      const record = await updateRecord(
         params.collection,
         params.id,
         req.body,

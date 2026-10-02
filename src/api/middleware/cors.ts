@@ -1,7 +1,7 @@
 import type { RequestHandler } from "express";
 
 const DEFAULT_CORS_ORIGIN = "*";
-const ALLOWED_METHODS = "GET,POST,PUT,DELETE,OPTIONS";
+const ALLOWED_METHODS = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
 const ALLOWED_HEADERS = "Authorization,Content-Type";
 
 export function readCorsOrigin(value: string | undefined): string {

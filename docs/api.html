@@ -63,6 +63,7 @@
   .get { background: var(--method-get); }
   .post { background: var(--method-post); }
   .put { background: var(--method-put); }
+  .patch { background: var(--method-put); }
   .delete { background: var(--method-delete); }
   .endpoint { font-weight: 600; }
   .error-list { list-style: none; padding: 0; }
@@ -85,7 +86,7 @@
   <li>System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다운로드는 바이너리이고, <code>204</code> 응답은 본문이 없습니다.</li>
   <li>모든 오류 응답은 <code>{ "error": "..." }</code> 형식의 JSON입니다.</li>
   <li>기본 포트는 <code>3000</code>이며 <code>PORT</code> 환경변수로 변경할 수 있습니다 (Docker 예: <code>-e PORT=8080 -p 8080:8080</code>).</li>
-  <li>CORS는 기본으로 모든 Origin을 허용하며, <code>CORS_ORIGIN</code> 환경변수로 단일 Origin을 지정할 수 있습니다. Cookie 기반 credential CORS는 지원하지 않습니다.</li>
+  <li>CORS는 기본으로 모든 Origin을 허용하며, <code>CORS_ORIGIN</code> 환경변수로 단일 Origin을 지정할 수 있습니다. <code>GET, POST, PUT, PATCH, DELETE, OPTIONS</code> preflight를 지원합니다. Cookie 기반 credential CORS는 지원하지 않습니다.</li>
   <li>DB/Auth의 요청 본문에는 <code>Content-Type: application/json</code> 헤더가 필요합니다.</li>
 </ul>
 
@@ -126,6 +127,7 @@
     <tr><td><span class="method get">GET</span></td><td class="endpoint">/collections/:collection/:id</td><td>단건 조회 → <code>{ "id", "data" }</code></td></tr>
     <tr><td><span class="method post">POST</span></td><td class="endpoint">/collections/:collection</td><td>레코드 생성. 본문에 임의 JSON 객체 → <code>201</code> <code>{ "id", "data" }</code></td></tr>
     <tr><td><span class="method put">PUT</span></td><td class="endpoint">/collections/:collection/:id</td><td>전체 교체 → <code>{ "id", "data" }</code></td></tr>
+    <tr><td><span class="method patch">PATCH</span></td><td class="endpoint">/collections/:collection/:id</td><td>최상위 필드 부분 수정 → <code>{ "id", "data" }</code></td></tr>
     <tr><td><span class="method delete">DELETE</span></td><td class="endpoint">/collections/:collection/:id</td><td>삭제 → <code>204</code></td></tr>
   </tbody>
 </table>
@@ -133,6 +135,13 @@
 <pre><code>GET /collections/users?filter[active]=true&amp;sort=name:asc&amp;offset=0&amp;limit=10
 { "collection": "users", "records": [], "total": 0, "offset": 0, "limit": 10 }</code></pre>
 <p>잘못된 정렬은 <code>400 { "error": "invalid_sort" }</code>, 잘못된 offset 또는 limit은 <code>400 { "error": "invalid_pagination" }</code>을 반환한다.</p>
+
+<p>PATCH 본문은 JSON 객체여야 합니다. 제공한 최상위 필드는 추가하거나 덮어쓰고 생략한 필드는 유지합니다. 중첩 객체는 깊게 병합하지 않고 통째로 교체하며 <code>null</code>은 삭제가 아닌 값으로 저장합니다. PUT은 전체 교체입니다.</p>
+<p>기존 데이터가 <code>{"name":"Ada","active":true,"profile":{"city":"London","age":30}}</code>인 경우:</p>
+<pre><code>curl -X PATCH localhost:3000/collections/users/1 \
+  -H 'Content-Type: application/json' -d '{"name":"Grace","profile":{"city":"Paris"},"note":null}'
+# 200 {"id":"1","data":{"name":"Grace","active":true,"profile":{"city":"Paris"},"note":null}}</code></pre>
+<p>객체가 아닌 본문은 400, 없는 레코드는 <code>404 {"error":"not_found","collection":"users","id":"1"}</code>을 반환합니다. 배열은 <code>invalid_record</code>, JSON 파서가 거부하는 원시 값은 <code>invalid_json</code> 오류입니다.</p>
 
 <h3>예시</h3>
 <pre><code>curl -X POST localhost:3000/collections/users \
@@ -204,6 +213,7 @@ curl -s -X POST localhost:3000/collections/users -H 'Content-Type: application/j
 curl -s localhost:3000/collections/users
 curl -s localhost:3000/collections/users/&lt;user-id&gt;
 curl -s -X PUT localhost:3000/collections/users/&lt;user-id&gt; -H 'Content-Type: application/json' -d '{"name":"Grace"}'
+curl -s -X PATCH localhost:3000/collections/users/&lt;user-id&gt; -H 'Content-Type: application/json' -d '{"active":true}'
 curl -s -X DELETE -i localhost:3000/collections/users/&lt;user-id&gt;
 
 # Auth (위에서 생성된 user-id 사용)

@@ -9,17 +9,17 @@
 - [x] `RecordStore`에 부분 수정 `update` 계약을 정의하고 유스케이스를 추가한다.
 - [x] 인메모리와 JSON 레코드 저장소에 부분 수정을 구현한다.
 - [x] JSON 저장소에서 읽기·병합·쓰기를 파일별 직렬화 작업으로 처리한다.
-- [ ] `PATCH /collections/:collection/:id`를 제공하고 성공·오류 응답을 정의한다.
-- [ ] CORS 허용 메서드에 `PATCH`를 추가한다.
-- [ ] 저장소·유스케이스·HTTP 계약과 동시 수정 동작을 테스트한다.
-- [ ] README와 API 문서에 요청·응답 및 부분 수정 규칙을 기록한다.
+- [x] `PATCH /collections/:collection/:id`를 제공하고 성공·오류 응답을 정의한다.
+- [x] CORS 허용 메서드에 `PATCH`를 추가한다.
+- [x] 저장소·유스케이스·HTTP 계약과 동시 수정 동작을 테스트한다.
+- [x] README와 API 문서에 요청·응답 및 부분 수정 규칙을 기록한다.
 
 ## 3. 테스트
 
-- 부분 수정 저장소·유스케이스 단위 테스트와 JSON 저장소 동시 수정 테스트
-- PATCH 성공·잘못된 본문·존재하지 않는 레코드·CORS preflight HTTP 계약
-- `npm test -- --run` — 현재 23개 파일, 108개 테스트 통과 (HTTP 구현 전)
-- `npm run build` — 통과 (HTTP 구현 전)
+- `npx vitest run tests/unit/data/db/inMemoryRecordStore.test.ts tests/unit/data/db/jsonFileRecordStore.test.ts tests/unit/application/database/updateRecordUseCase.test.ts` — 3개 파일, 41개 테스트 통과
+- `npx vitest run tests/integration/httpContract.test.ts` — 1개 파일, 14개 테스트 통과 (로컬 포트 허용 환경)
+- `npm test -- --run` — 23개 파일, 111개 테스트 통과
+- `npm run build` — 통과
 
 ## 4. 세부사항
 

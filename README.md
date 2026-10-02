@@ -90,7 +90,7 @@ CORS_ORIGIN=http://localhost:5173 npm run dev
 docker run -p 3000:3000 -e CORS_ORIGIN=http://localhost:5173 devbox-light-server
 ```
 
-`Authorization`·`Content-Type` 헤더와 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS` 메서드의 preflight를 지원합니다. Cookie 기반 credential CORS는 지원하지 않습니다.
+`Authorization`·`Content-Type` 헤더와 `GET`·`POST`·`PUT`·`PATCH`·`DELETE`·`OPTIONS` 메서드의 preflight를 지원합니다. Cookie 기반 credential CORS는 지원하지 않습니다.
 
 ## API 레퍼런스
 
@@ -106,6 +106,7 @@ docker run -p 3000:3000 -e CORS_ORIGIN=http://localhost:5173 devbox-light-server
 | GET | `/collections/:collection/:id` | 단건 조회 |
 | POST | `/collections/:collection` | 레코드 생성 |
 | PUT | `/collections/:collection/:id` | 전체 교체 |
+| PATCH | `/collections/:collection/:id` | 최상위 필드 부분 수정 |
 | DELETE | `/collections/:collection/:id` | 삭제 |
 | POST | `/auth/login` | 로그인 |
 | GET | `/auth/me` | 인증된 사용자 확인 |
@@ -117,6 +118,16 @@ docker run -p 3000:3000 -e CORS_ORIGIN=http://localhost:5173 devbox-light-server
 
 예: `GET /collections/users?filter[active]=true&sort=name:asc&offset=0&limit=10`.
 응답은 `{ "collection": "users", "records": [], "total": 0, "offset": 0, "limit": 10 }` 형식이다. `total`은 필터 후 전체 수이며 기본 `offset`은 0, 제한 없는 `limit`은 null이다. 잘못된 정렬 또는 페이지 값은 각각 `400 {"error":"invalid_sort"}`, `400 {"error":"invalid_pagination"}`을 반환한다.
+
+`PATCH /collections/:collection/:id`는 JSON 객체의 최상위 필드만 추가하거나 덮어쓰며, 생략한 필드는 유지합니다. 중첩 객체는 통째로 교체하고 `null`은 삭제하지 않고 값으로 저장합니다. `PUT`은 계속 전체 교체입니다. 예를 들어 기존 데이터가 `{"name":"Ada","active":true,"profile":{"city":"London","age":30}}`일 때:
+
+```bash
+curl -X PATCH localhost:3000/collections/users/1 \
+  -H 'Content-Type: application/json' -d '{"name":"Grace","profile":{"city":"Paris"},"note":null}'
+# {"id":"1","data":{"name":"Grace","active":true,"profile":{"city":"Paris"},"note":null}}
+```
+
+객체가 아닌 본문은 `400`, 없는 레코드는 `404 {"error":"not_found","collection":"users","id":"1"}`을 반환합니다. 배열은 `invalid_record`, JSON 파서가 거부하는 원시 값은 `invalid_json` 오류입니다.
 
 System·DB·Auth의 본문이 있는 성공 응답은 JSON입니다. 파일 다운로드는 바이너리를 반환하고, `204` 응답은 본문이 없습니다. 모든 오류 응답은 `{ "error": "..." }` 형식의 JSON입니다. 상세 응답·오류 코드·curl 예제는 [docs/api.html](docs/api.html)을 참고하세요.
 

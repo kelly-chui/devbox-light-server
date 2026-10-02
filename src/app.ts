@@ -11,6 +11,7 @@ import {
   createGetRecordUseCase,
   createListRecordsUseCase,
   createReplaceRecordUseCase,
+  createUpdateRecordUseCase,
 } from "./application/database/index.js";
 import {
   createDeleteFileUseCase,
@@ -50,6 +51,7 @@ const listRecords = createListRecordsUseCase({ recordStore });
 const getRecord = createGetRecordUseCase({ recordStore });
 const createRecord = createCreateRecordUseCase({ recordStore });
 const replaceRecord = createReplaceRecordUseCase({ recordStore });
+const updateRecord = createUpdateRecordUseCase({ recordStore });
 const deleteRecord = createDeleteRecordUseCase({ recordStore });
 app.use(
   "/collections",
@@ -58,6 +60,7 @@ app.use(
     getRecord,
     createRecord,
     replaceRecord,
+    updateRecord,
     deleteRecord,
   }),
 );

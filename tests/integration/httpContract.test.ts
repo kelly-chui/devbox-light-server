@@ -46,12 +46,57 @@ describe("HTTP API contract", () => {
       .expect(204);
     expect(preflight.headers["access-control-allow-origin"]).toBe("*");
     expect(preflight.headers["access-control-allow-methods"]).toBe(
-      "GET,POST,PUT,DELETE,OPTIONS",
+      "GET,POST,PUT,PATCH,DELETE,OPTIONS",
     );
     expect(preflight.headers["access-control-allow-headers"]).toBe(
       "Authorization,Content-Type",
     );
     expect(preflight.text).toBe("");
+  });
+
+  it("allows PATCH collection preflight", async () => {
+    const response = await request(app)
+      .options("/collections/items/1")
+      .set("Origin", "http://localhost:5173")
+      .set("Access-Control-Request-Method", "PATCH")
+      .set("Access-Control-Request-Headers", "content-type")
+      .expect(204);
+    expect(response.headers["access-control-allow-origin"]).toBe("*");
+    expect(response.headers["access-control-allow-methods"].split(",")).toContain("PATCH");
+    expect(response.headers["access-control-allow-headers"]).toContain("Content-Type");
+  });
+
+  it("partially updates a collection record and keeps PUT as a replacement", async () => {
+    const base = "/collections/http-contract-patch";
+    const created = await request(app).post(base).send({
+      name: "Ada", retained: true, profile: { city: "London", active: true }, note: "old",
+    }).expect(201);
+    const path = `${base}/${created.body.id}`;
+    const updated = await request(app).patch(path).send({
+      name: "Grace", added: 1, profile: { city: "Paris" }, note: null,
+    }).expect(200);
+    expect(updated.body).toEqual({
+      id: created.body.id,
+      data: { name: "Grace", retained: true, added: 1, profile: { city: "Paris" }, note: null },
+    });
+    expect((await request(app).get(path).expect(200)).body).toEqual(updated.body);
+    const replaced = await request(app).put(path).send({ name: "Linus" }).expect(200);
+    expect(replaced.body).toEqual({ id: created.body.id, data: { name: "Linus" } });
+  });
+
+  it("rejects invalid PATCH bodies and reports missing records", async () => {
+    const path = "/collections/http-contract-patch-errors/missing";
+    const array = await request(app).patch(path).send([]).expect(400);
+    expect(array.body).toEqual({ error: "invalid_record" });
+    for (const body of ["null", "42", '"text"', "true"]) {
+      const response = await request(app).patch(path)
+        .set("Content-Type", "application/json").send(body).expect(400);
+      expect(response.body).toEqual({ error: "invalid_json" });
+    }
+    const missing = await request(app).patch(path).send({ name: "Grace" }).expect(404);
+    expect(missing.body).toEqual({
+      error: "not_found", collection: "http-contract-patch-errors", id: "missing",
+    });
   });
 
   it("supports the collection CRUD flow", async () => {
