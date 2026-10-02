@@ -189,6 +189,39 @@ describe("JsonFileRecordStore", () => {
     ).rejects.toBeInstanceOf(RecordNotFoundError);
   });
 
+  it("shallowly updates and returns a record without leaking references", async () => {
+    const created = await store.create("users", {
+      name: "Ada", retained: true, profile: { city: "London", active: true }, note: "old",
+    });
+    const changes = { name: "Grace", added: 1, profile: { city: "Paris" }, note: null };
+    const updated = await store.update("users", created.id, changes);
+    const expected = {
+      id: created.id,
+      data: { name: "Grace", retained: true, added: 1, profile: { city: "Paris" }, note: null },
+    };
+    expect(updated).toEqual(expected);
+    changes.profile.city = "Changed";
+    updated.data.profile = { city: "Changed again" };
+    expect(await store.get("users", created.id)).toEqual(expected);
+  });
+
+  it("throws when updating a missing record", async () => {
+    await expect(store.update("users", "999", { name: "Grace" }))
+      .rejects.toBeInstanceOf(RecordNotFoundError);
+  });
+
+  it("serializes concurrent partial updates across instances", async () => {
+    const created = await createUser();
+    const otherStore = new JsonFileRecordStore(rootDirectory);
+    await Promise.all(Array.from({ length: 10 }, (_, index) =>
+      (index % 2 === 0 ? store : otherStore).update("users", created.id, { [`field${index}`]: index }),
+    ));
+    expect((await otherStore.get("users", created.id))?.data).toEqual({
+      name: "Ada",
+      ...Object.fromEntries(Array.from({ length: 10 }, (_, index) => [`field${index}`, index])),
+    });
+  });
+
   it("deletes records", async () => {
     const created = await createUser();
 

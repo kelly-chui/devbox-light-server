@@ -68,6 +68,17 @@ export class InMemoryRecordStore implements RecordStore {
     store.records.set(id, structuredClone(data));
   }
 
+  async update(collection: string, id: string, data: RecordData): Promise<StoredRecord> {
+    const store = this.collections.get(collection);
+    const existing = store?.records.get(id);
+    if (store === undefined || existing === undefined) {
+      throw new RecordNotFoundError(collection, id);
+    }
+    const updated = structuredClone({ ...existing, ...data });
+    store.records.set(id, updated);
+    return { id, data: structuredClone(updated) };
+  }
+
   async delete(collection: string, id: string): Promise<boolean> {
     const store = this.collections.get(collection);
     if (store === undefined) {

@@ -13,6 +13,7 @@ export interface RecordStore {
   get(collection: string, id: string): Promise<StoredRecord | undefined>;
   create(collection: string, data: RecordData): Promise<StoredRecord>;
   replace(collection: string, id: string, data: RecordData): Promise<void>;
+  update(collection: string, id: string, data: RecordData): Promise<StoredRecord>;
   delete(collection: string, id: string): Promise<boolean>;
 }
 

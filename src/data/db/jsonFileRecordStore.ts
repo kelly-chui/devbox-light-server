@@ -137,6 +137,21 @@ export class JsonFileRecordStore implements RecordStore {
     });
   }
 
+  async update(collection: string, id: string, data: RecordData): Promise<StoredRecord> {
+    const filePath = this.collectionFilePath(collection);
+    return runJsonFileOperation(filePath, async () => {
+      const store = await this.readCollection(collection);
+      if (!(id in store.records)) {
+        throw new RecordNotFoundError(collection, id);
+      }
+      const updated = structuredClone({ ...store.records[id], ...data });
+      await this.writeCollection(collection, {
+        records: { ...store.records, [id]: updated },
+      });
+      return { id, data: structuredClone(updated) };
+    });
+  }
+
   async delete(collection: string, id: string): Promise<boolean> {
     const filePath = this.collectionFilePath(collection);
     return runJsonFileOperation(filePath, async () => {

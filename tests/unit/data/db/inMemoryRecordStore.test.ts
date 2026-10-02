@@ -137,6 +137,29 @@ describe("InMemoryRecordStore", () => {
     ).rejects.toBeInstanceOf(RecordNotFoundError);
   });
 
+  it("shallowly updates and returns a record without leaking references", async () => {
+    const store = new InMemoryRecordStore();
+    const created = await store.create("users", {
+      name: "Ada", retained: true, profile: { city: "London", active: true }, note: "old",
+    });
+    const changes = { name: "Grace", added: 1, profile: { city: "Paris" }, note: null };
+    const updated = await store.update("users", created.id, changes);
+    const expected = {
+      id: created.id,
+      data: { name: "Grace", retained: true, added: 1, profile: { city: "Paris" }, note: null },
+    };
+    expect(updated).toEqual(expected);
+    changes.profile.city = "Changed";
+    updated.data.profile = { city: "Changed again" };
+    expect(await store.get("users", created.id)).toEqual(expected);
+  });
+
+  it("throws when updating a missing record", async () => {
+    const store = new InMemoryRecordStore();
+    await expect(store.update("users", "999", { name: "Grace" }))
+      .rejects.toBeInstanceOf(RecordNotFoundError);
+  });
+
   it("deletes records", async () => {
     const store = new InMemoryRecordStore();
 
